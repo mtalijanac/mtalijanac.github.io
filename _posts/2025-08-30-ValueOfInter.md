@@ -22,27 +22,28 @@ It is a memory utility.
 Demonstration:
 
 {% highlight java linenos %}
-    String s1 = "hello";
-    String s2 = new String("hello");
-    System.out.println(s1 == s2); // false, as s1 and s2 are not the same string
+String s1 = "hello";
+String s2 = new String("hello");
+System.out.println(s1 == s2); // false, as s1 and s2 are not the same string
 
-    s2 = s2.intern();
-    System.out.println(s1 == s2); // true, as s1 is original interned value
+s2 = s2.intern();
+System.out.println(s1 == s2); // true, as s1 is original interned value
 {% endhighlight %}
 
 Two equal strings are instantiated, but after interning one stays. s1 string is created
 as string literal, and thus it is interned by default. But it works for any string, not
 only literals:
 
-```java        
-    String s4 = new String("world");
-    String s5 = new String("world");
-    System.out.println(s4 == s5); // false, again those two are equal but are not the same
+{% highlight java linenos %}
+String s4 = new String("world");
+String s5 = new String("world");
+System.out.println(s4 == s5); // false, again those two are equal but are not the same
 
-    String s6 = s4.intern();
-    String s7 = s5.intern();
-    System.out.println(s6 == s7); // true, as their interned values point to same instance
-```
+String s6 = s4.intern();
+String s7 = s5.intern();
+System.out.println(s6 == s7); // true, as their interned values point to same instance
+{% endhighlight %}
+
 How does interning work? An internal string pool is prepopulated at program start with all
 [string literals](https://www.baeldung.com/java-literals). When _intern()_ is called on a string,
 this pool is searched for an equal string. If found, the one from pool is returned. Otherwise,
@@ -60,16 +61,16 @@ string interning is the way to go. This scenario is especially common when unmar
 
 Imagine loading users using JDBC:
 
-```java
-    ResultSet rs = stmt.executeQuery("SELECT name, gender, age FROM users");
-    while (rs.next()) {
-        String name = rs.getString("name");
-        String gender = rs.getString("gender");
-        Integer age = rs.getInt("age");
-        
-        System.out.printf("Name: %s, Gender: %s, Age: %d%n", name, gender, age);
-    }
-```
+{% highlight java linenos %}
+ResultSet rs = stmt.executeQuery("SELECT name, gender, age FROM users");
+while (rs.next()) {
+    String name = rs.getString("name");
+    String gender = rs.getString("gender");
+    Integer age = rs.getInt("age");
+    
+    System.out.printf("Name: %s, Gender: %s, Age: %d%n", name, gender, age);
+}
+{% endhighlight %}
 
 There are three fields in the example: *name*, *gender* and *age*. Low-cardinality data can interned. *Name* is obviuosly
 opiste of low-cardinality. It is quite unique (there was and never will another "Dudley Pound"), so interning name would
@@ -79,9 +80,9 @@ be interned because Integer lacks this functionality[^1].
 
 Thus the reasonable change to the program would thus be:
 
-```java
-    String gender = rs.getString("gender").intern();
-```
+{% highlight java linenos %}
+String gender = rs.getString("gender").intern();
+{% endhighlight %}
 
 In the 1990s, interning strings was common, and every developer knew of it. Back then memory was a scarce
 resource. In the 2020s few use it. But Java being Java the method remains.
@@ -116,18 +117,18 @@ Here the path to performance Nirvana is simplicity:
 The first one is common sense. And second one is a cache. The cache of values. Intern cache of values.
 Think of it as:
 
-```java
-    final HashMap<String, String> internMap = new HashMap<>();
+{% highlight java linenos %}
+final HashMap<String, String> internMap = new HashMap<>();
 
-    String intern(String str) {
-        return internMap.computeIfAbsent(str, key -> key);
-    }
+String intern(String str) {
+    return internMap.computeIfAbsent(str, key -> key);
+}
 
-    ...
-    // JDBC example becomes:
-    String gender = rs.getString("gender"); // deserilazie
-    gender = intern( gender );              // internalize
-```
+...
+// JDBC example becomes:
+String gender = rs.getString("gender"); // deserilazie
+gender = intern( gender );              // internalize
+{% endhighlight %}
 
 To reuse data all it takes is a map lookup for a value equal to its key. And this is not a String only trick 
 - it works for all **value types**. We could intern Longs or Integers or any other type. Any objects, as long
@@ -143,17 +144,17 @@ We should reuse data before it is converted to an object!
 
 What we want is to fetch an interned object based on its marshaled representation:
 
-```java
-    final HashMap<byte[], String> internMap = new HashMap<>();
+{% highlight java linenos %}
+final HashMap<byte[], String> internMap = new HashMap<>();
 
-    String intern(byte[] data) {
-        return internMap.computeIfAbsent(data, key -> new String(key, StandardCharsets.UTF_8));
-    }
+String intern(byte[] data) {
+    return internMap.computeIfAbsent(data, key -> new String(key, StandardCharsets.UTF_8));
+}
 
-    ...
-    byte[] genderData = rs.getBytes("gender"); // no deserilazion, just read raw byte
-    String gender = intern( genderData )       // fetch internlized value
-```
+...
+byte[] genderData = rs.getBytes("gender"); // no deserilazion, just read raw byte
+String gender = intern( genderData )       // fetch internlized value
+{% endhighlight %}
 
 In this variation objects are interned based on their marshalled representation.
 And instances are allocated once and only if not found in cache. This is exactly what is needed.
