@@ -55,7 +55,7 @@ That's all there is to it.
 
 ## How to Intern Like It's 1999
 
-Interning is expensive but, it lowers memory usage as copies of same string can be disposed of.
+Interning has cpu overhead, but it lowers memory usage as copies of same string can be disposed of.
 If a program deals with lots of low-cardinality — a fancy wording for _"repeating values"_ —
 string interning is the way to go. This scenario is especially common when unmarshalling data.
 
@@ -78,22 +78,27 @@ be a memory wasted - or even cause leaks. However _gender_ - that is "male"/"fem
 few possible values across all users. Thus, gender can be safley interned to reduce memory usage. Final field - *age* - can't
 be interned because Integer lacks this functionality[^1].
 
-Thus the reasonable change to the program would thus be:
+Now imagine that we do this in tight loop, across millions of row (nigth batch or something).
+Thus the reasonable change to the program would to intern:
 
 {% highlight java linenos %}
 String gender = rs.getString("gender").intern();
 {% endhighlight %}
 
 In the 1990s, interning strings was common, and every developer knew of it. Back then memory was a scarce
-resource. In the 2020s few use it. But Java being Java the method remains.
+resource. Times flies and in the 2020s few use it. But Java being Java the method remains.
 
 
 ## Why Bother Then?
 
-If interning is old school why bother with it? Well good ideas rarely go out of fashion.
-New technologies often repeate the same old limitations but on a different scale. Yes we have
-more memory now, but we also have more data. Thus old memory tricks should still be usefull.
-Efficency is a mover here.
+If interning is old school why bother with it? In Java recommended approach is "don't worry, 
+allocations are cheap, GC does it better than you". And Java programmers listen and every
+Java program is like 1.5 gb of heap for startup. And every non-Java programmer is like
+"Java eats memory".
+
+Well good ideas rarely go out of fashion. New technologies often repeate the same old
+limitations but on a different scale. Yes we have more memory now, but we also have more data.
+Thus old memory tricks should still be usefull. Efficency is a mover here.
 
 One of the common failures of modern software is running code under heavy allocation pressure.
 This typically looks like a loop which allocates copius amounts of memory during each iteration,
