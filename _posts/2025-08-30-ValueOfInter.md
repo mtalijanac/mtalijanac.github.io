@@ -26,8 +26,8 @@ String s1 = "hello";
 String s2 = new String("hello");
 System.out.println(s1 == s2); // false, as s1 and s2 are not the same string
 
-s2 = s2.intern();
-System.out.println(s1 == s2); // true, as s1 is original interned value
+s3 = s2.intern();
+System.out.println(s1 == s3); // true, as s1 is original interned value
 {% endhighlight %}
 
 Two equal strings are instantiated, but after interning one stays. s1 string is created
