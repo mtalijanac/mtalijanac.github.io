@@ -16,7 +16,7 @@ to the majority of developers.
 So what Intern is? And why should you use it?
 
 To start _intern_ is a [method](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/String.html#intern())
-of the String. When used properly, intern lowers memory usage by keeping only one instance of the equal string in memory.
+of the String. When used properly, intern lowers memory usage by keeping only one instance of string in memory.
 It is a memory utility.
 
 Demonstration:
