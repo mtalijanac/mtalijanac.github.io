@@ -199,7 +199,7 @@ Trie<Long> would only need to be be four nodes deep.
 
 ![Variations of Trie types](ValueOfIntern.DogDot.svg){: .mx-auto.d-block :}
 
-![Crepe]({{ '/assets/img/crepe.jpg' | relative_url }})
+![Variations of Trie types]({{ '/assets/img/ValueOfIntern/DogDot.svg' | relative_url }})
 
 ![Crepe](https://beautifuljekyll.com/assets/img/crepe.jpg){: .mx-auto.d-block :}
 
