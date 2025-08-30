@@ -48,7 +48,7 @@ How does interning work? An internal string pool is prepopulated at program star
 [string literals](https://www.baeldung.com/java-literals). When _intern()_ is called on a string,
 this pool is searched for an equal string. If found, the one from pool is returned. Otherwise,
 the current string is added to the pool. Thus, interning is nothing but a cache of strings, 
-and method name stands for _"add this string to internal pool"_. 
+and method name stands for _"add this string to the internal pool"_. 
 
 That's all there is to it.
 
