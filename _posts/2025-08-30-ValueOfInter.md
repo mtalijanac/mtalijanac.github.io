@@ -16,7 +16,7 @@ to the majority of developers.
 So what Intern is? And why should you use it?
 
 To start _intern_ is a [method](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/String.html#intern())
-of the String. When used properly, intern lowers memory usage by keeping only one instance of the same string in memory.
+of the String. When used properly, intern lowers memory usage by keeping only one instance of the equal string in memory.
 It is a memory utility.
 
 Demonstration:
@@ -24,30 +24,36 @@ Demonstration:
 ```java
     String s1 = "hello";
     String s2 = new String("hello");
-    String s3 = s2.intern();
-
     System.out.println(s1 == s2); // false, as s1 and s2 are not the same string
-    System.out.println(s1 == s3); // true, as s1 is interned value
-        
+
+    s2 = s2.intern();
+    System.out.println(s1 == s2); // true, as s1 is original interned value
+```
+Two equal strings are instantiated, but after interning one stays. s1 string is created
+as string literal, and thus it is interned by default. But it works for any string, not
+only literals:
+
+```java        
     String s4 = new String("world");
     String s5 = new String("world");
+    System.out.println(s4 == s5); // false, again those two are equal but are not the same
+
     String s6 = s4.intern();
     String s7 = s5.intern();
-        
-    System.out.println(s4 == s5); // false, again those two aren't the same string
-    System.out.println(s6 == s7); // true, as their interned values are
+    System.out.println(s6 == s7); // true, as their interned values point to same instance
 ```
+How does interning work? An internal string pool is prepopulated at program start with all
+[string literals](https://www.baeldung.com/java-literals). When _intern()_ is called on a string,
+this pool is searched for an equal string. If found, the one from pool is returned. Otherwise,
+the current string is added to the pool. Thus, interning is nothing but a cache of strings, 
+and method name stands for _"add this string to internal pool"_. 
 
-That's all there is to it. How does it work?
-
-An internal string pool is prepopulated at program start with all [string literals](https://www.baeldung.com/java-literals).
-When _intern()_ is called on a string, this pool is searched for an equivalent string. If found, the one from pool is returned.
-Otherwise, the current string is added to the pool. Thus, interning is nothing but a cache of strings, and the name
-stands for _"add this string to internal pool"_. 
+That's all there is to it.
 
 
 ## How to Intern Like It's 1999
 
+Interning is expensive but, it lowers memory usage as copies of same string can be disposed of.
 If a program deals with lots of low-cardinality — a fancy wording for _"repeating values"_ —
 string interning is the way to go. This scenario is especially common when unmarshalling data.
 
@@ -65,45 +71,48 @@ Imagine loading users using JDBC:
 ```
 
 There are three fields in the example: *name*, *gender* and *age*. Low-cardinality data can interned. *Name* is obviuosly
-quite unique (there was and never will another "Dudley Pound"), so interning name would be a memory wasted - 
-or even cause leaks. However _gender_ - that is "male"/"female" or "m"/"f", - oscilates between few values for all users.
-Thus, gender can be safley interned to reduce memory usage. Finaly, *age* can't be interned because Integer lacks this functionality[^1].
+opiste of low-cardinality. It is quite unique (there was and never will another "Dudley Pound"), so interning name would
+be a memory wasted - or even cause leaks. However _gender_ - that is "male"/"female" or "m"/"f". This field oscilates between
+few possible values across all users. Thus, gender can be safley interned to reduce memory usage. Final field - *age* - can't
+be interned because Integer lacks this functionality[^1].
 
-The reasonable change to the program would thus be:
+Thus the reasonable change to the program would thus be:
 
 ```java
     String gender = rs.getString("gender").intern();
 ```
 
 In the 1990s, interning strings was common, and every developer knew of it. Back then memory was a scarce
-resource. In the 2020s few use it. But the method remains.
+resource. In the 2020s few use it. But Java being Java the method remains.
 
 
 ## Why Bother Then?
 
-Good ideas rarely go out of fashion. New technologies often repeate the same old limitations
-but on a different scale. We have more memory now, but we also have more data. Thus old memory
-tricks should still be usefull.
+If interning is old school why bother with it? Well good ideas rarely go out of fashion.
+New technologies often repeate the same old limitations but on a different scale. Yes we have
+more memory now, but we also have more data. Thus old memory tricks should still be usefull.
+Efficency is a mover here.
 
 One of the common failures of modern software is running code under heavy allocation pressure.
 This typically looks like a loop which allocates copius amounts of memory during each iteration,
 only to discard it in the next. In such programs, memory usage jumps up and down, up and down like 
-on a trampoline. These heavy allocation-deallocation cyles (allocations stalls) sometimes behave 
-like real trampolines and throw things in [unwanted directions](https://youtu.be/L68zxvl2LPY?t=1850).[^2]
+on a trampoline. These heavy allocation-deallocation cyles (gc pauses and allocations stalls)
+sometimes behave like real trampolines and throw things in [unwanted directions](https://youtu.be/L68zxvl2LPY?t=1850).[^2]
 
-For a software with this behaviour dominant performance issues are:
-  - Unmarshalling binary data into Java objects
-  - Garbage collecting all those objects
+When software expresses this behaviour dominant performance issues usually are:
+  - Unmarshalling binary data into Java objects (it takes time and memory, and allocation stalls)
+  - Garbage collecting all those objects (it takes time, cpus usage and interuptions)
 
-And these are two sides of the same coin. Optimize one, and the other improves. 
-Everything else almost doesn't matter. A 100,000-line system lives or dies 
-on 1,000 lines of code. This is a classic performance distribution of source.
+And these are two sides of the same coin. Remove allocation than gc improves. Gc improves, more cpu 
+to allocate faster. Optimize one, and the other improves. In applications like this everything
+else almost doesn't matter. A 100,000-line system lives or dies on 1,000 lines of code.
+This is a classic performance distribution of source.
 
 Here the path to performance Nirvana is simplicity:
   - Don't unmarshall **unneeded** data
   - Reuse **low-cardinality** data
 
-The first one is common sense. And second one is a cache. Cache of values. Intern cache of values.
+The first one is common sense. And second one is a cache. The cache of values. Intern cache of values.
 Think of it as:
 
 ```java
@@ -112,6 +121,11 @@ Think of it as:
     String intern(String str) {
         return internMap.computeIfAbsent(str, key -> key);
     }
+
+    ...
+    // JDBC example becomes:
+    String gender = rs.getString("gender"); // deserilazie
+    gender = intern( gender );              // internalize
 ```
 
 To reuse data all it takes is a map lookup for a value equal to its key. And this is not a String only trick 
@@ -121,7 +135,7 @@ To reuse data all it takes is a map lookup for a value equal to its key. And thi
 
 This approach has a flaw: we still allocate objects before checking the cache.
 To avoid allocations stalls, to truly save memory, we should avoid unmarshalling entirely.
-We should reuse data before it is an object!
+We should reuse data before it is converted to an object!
 
 
 ##  A Better Way to Intern
@@ -134,6 +148,10 @@ What we want is to fetch an interned object based on its marshaled representatio
     String intern(byte[] data) {
         return internMap.computeIfAbsent(data, key -> new String(key, StandardCharsets.UTF_8));
     }
+
+    ...
+    byte[] genderData = rs.getBytes("gender"); // no deserilazion, just read raw byte
+    String gender = intern( genderData )       // fetch internlized value
 ```
 
 In this variation objects are interned based on their marshalled representation.
@@ -142,8 +160,8 @@ And instances are allocated once and only if not found in cache. This is exactly
 Unfortunately, this code won't work becuse byte arrays have _identity_ [^3] and can't be used as keys in Map.
 As far Map is concerned each byte array is a unique instance. You could roll own wrapper around
 byte array which fixes identity issues - a wrapper with a proper hashCode and equals. 
-However the goal here isn't avoiding ***new String*** but ***new anything***. Any wrapper would require
-allocation of wrapper, so that is no go.
+However the goal here isn't avoiding ***new String*** but ***new anything***. Any wrapper would thus
+require allocation of wrapper, so that is no go.
 
 To trully repair this issue we need a different kind of Map — the one which does not use naive hashCode/equals.
 And the great one to use is [UnifiedMapWithHashigStrategy](https://www.javaadvent.com/2023/12/hidden-treasures-of-eclipse-collections-2023-edition.html)
@@ -153,23 +171,24 @@ You create a map. You provide HashingStrategy. It works. Use it.
 
 ## An Even Better Way
 
-But why stop here? I do like performance quests and this looks like a one. Can it be done better? Faster? Stronger?
+But why stop here? I do like performance quests and this looks like a one. 
+Can this be done better? Faster? Stronger?
 
 Let's write out limitations:
-  - Majority of byte arrays in this problem are short  
+  - in this problem byte arrays are short (low cardinality doesn't like LONG names)
   - Map lookup requires a value type using hashCode and equals
   - To test _value_ of byte array means constantly calculating hashCode and equals
 
 That is to say — we have nontrivial compute operation right in the heart of map lookup. 
-Map<byte[], String> solutil will work — but it won't scale.
+Map<byte[],String> solution will work — but it won't scale.
 
 So why not avoid all those issues and use a structure suited for this task — a [Trie](https://en.wikipedia.org/wiki/Trie)? 
-Trie< Byte > sounds much closer to our problem. If we need to walk byte array (for equality, for hashCode)
+Trie<Byte> sounds much closer to our problem. If we need to walk byte array (for equality, for hashCode)
 why not walk a Trie instead?
 
 And why do we have to walk bytes at all? One long can encode eight bytes. Majority of data arrays 
 will be ony a few bytes long. 30 bytes can fit in a four longs with a few bytes to spare. Thus matching 
-Trie< Long > would only need to be be four nodes deep.
+Trie<Long> would only need to be be four nodes deep.
 
 ![Variations of Trie types](ValueOfIntern.DogDot.svg)
 
