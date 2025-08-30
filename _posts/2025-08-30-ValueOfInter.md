@@ -197,10 +197,7 @@ And why do we have to walk bytes at all? One long can encode eight bytes. Majori
 will be ony a few bytes long. 30 bytes can fit in a four longs with a few bytes to spare. Thus matching 
 Trie<Long> would only need to be be four nodes deep.
 
-![Variations of Trie types]({{ '/assets/img/ValueOfIntern/DogDot.svg' | relative_url }})
-
 ![Variations of Trie types]({{ '/assets/img/ValueOfIntern/DogDot.svg' | relative_url }}){: .mx-auto.d-block :}
-
 
 
 Image illustrates these ideas. The first Trie encodes "DOG" by using Strings. To walk that Trie we
