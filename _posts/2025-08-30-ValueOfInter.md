@@ -197,11 +197,11 @@ And why do we have to walk bytes at all? One long can encode eight bytes. Majori
 will be ony a few bytes long. 30 bytes can fit in a four longs with a few bytes to spare. Thus matching 
 Trie<Long> would only need to be be four nodes deep.
 
-![Variations of Trie types](ValueOfIntern.DogDot.svg){: .mx-auto.d-block :}
-
 ![Variations of Trie types]({{ '/assets/img/ValueOfIntern/DogDot.svg' | relative_url }})
 
-![Crepe](https://beautifuljekyll.com/assets/img/crepe.jpg){: .mx-auto.d-block :}
+![Variations of Trie types]({{ '/assets/img/ValueOfIntern/DogDot.svg' | relative_url }}){: .mx-auto.d-block :}
+
+
 
 Image illustrates these ideas. The first Trie encodes "DOG" by using Strings. To walk that Trie we
 need an instance of String. Second one replaces strings at nodes with byte values. Thus we can find
