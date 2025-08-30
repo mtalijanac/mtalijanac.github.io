@@ -3,7 +3,7 @@ layout: post
 title: Value of Intern
 subtitle: There's lots to learn!
 gh-repo: mtalijanac/associations
-gh-badge: [star, fork, follow]
+# gh-badge: [star, fork, follow]
 tags: [java jmv]
 comments: true
 mathjax: true
