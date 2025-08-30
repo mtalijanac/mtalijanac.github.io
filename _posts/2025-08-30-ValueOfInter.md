@@ -21,14 +21,15 @@ It is a memory utility.
 
 Demonstration:
 
-```java
+{% highlight java linenos %}
     String s1 = "hello";
     String s2 = new String("hello");
     System.out.println(s1 == s2); // false, as s1 and s2 are not the same string
 
     s2 = s2.intern();
     System.out.println(s1 == s2); // true, as s1 is original interned value
-```
+{% endhighlight %}
+
 Two equal strings are instantiated, but after interning one stays. s1 string is created
 as string literal, and thus it is interned by default. But it works for any string, not
 only literals:
