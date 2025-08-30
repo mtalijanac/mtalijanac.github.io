@@ -21,6 +21,7 @@ It is a memory utility.
 
 Demonstration:
 
+```java
     String s1 = "hello";
     String s2 = new String("hello");
     String s3 = s2.intern();
@@ -35,6 +36,7 @@ Demonstration:
         
     System.out.println(s4 == s5); // false, again those two aren't the same string
     System.out.println(s6 == s7); // true, as their interned values are
+```
 
 That's all there is to it. How does it work?
 
@@ -51,6 +53,7 @@ string interning is the way to go. This scenario is especially common when unmar
 
 Imagine loading users using JDBC:
 
+```java
     ResultSet rs = stmt.executeQuery("SELECT name, gender, age FROM users");
     while (rs.next()) {
         String name = rs.getString("name");
@@ -59,6 +62,7 @@ Imagine loading users using JDBC:
         
         System.out.printf("Name: %s, Gender: %s, Age: %d%n", name, gender, age);
     }
+```
 
 There are three fields in the example: *name*, *gender* and *age*. Low-cardinality data can interned. *Name* is obviuosly
 quite unique (there was and never will another "Dudley Pound"), so interning name would be a memory wasted - 
@@ -67,7 +71,9 @@ Thus, gender can be safley interned to reduce memory usage. Finaly, *age* can't 
 
 The reasonable change to the program would thus be:
 
+```java
     String gender = rs.getString("gender").intern();
+```
 
 In the 1990s, interning strings was common, and every developer knew of it. Back then memory was a scarce
 resource. In the 2020s few use it. But the method remains.
@@ -100,11 +106,13 @@ Here the path to performance Nirvana is simplicity:
 The first one is common sense. And second one is a cache. Cache of values. Intern cache of values.
 Think of it as:
 
+```java
     final HashMap<String, String> internMap = new HashMap<>();
 
     String intern(String str) {
         return internMap.computeIfAbsent(str, key -> key);
     }
+```
 
 To reuse data all it takes is a map lookup for a value equal to its key. And this is not a String only trick 
 - it works for all **value types**. We could intern Longs or Integers or any other type. Any objects, as long
@@ -120,11 +128,13 @@ We should reuse data before it is an object!
 
 What we want is to fetch an interned object based on its marshaled representation:
 
+```java
     final HashMap<byte[], String> internMap = new HashMap<>();
 
     String intern(byte[] data) {
         return internMap.computeIfAbsent(data, key -> new String(key, StandardCharsets.UTF_8));
     }
+```
 
 In this variation objects are interned based on their marshalled representation.
 And instances are allocated once and only if not found in cache. This is exactly what is needed.
