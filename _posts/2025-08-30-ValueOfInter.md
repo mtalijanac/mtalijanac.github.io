@@ -2,14 +2,14 @@
 layout: post
 title: Value of Intern
 subtitle: There's lots to learn!
-cover-img: /assets/img/path.jpg
+cover-img: /assets/img/ValueOfIntern/path-in-front.jpg
 gh-repo: mtalijanac/associations
 tags: [java jmv]
 author: Marko Talijanac
 ---
 
-It isn't an unreasonable assumption that for a class as popular as String, 
-every Java developer should be deeply familiar with its inner workings. 
+It isn't an unreasonable assumption that for a class as central as String, 
+every Java developer should be familiar with its inner workings. 
 And yet, string interning is — at least from my experience — an unknown mechanism 
 to the majority of developers.
 
@@ -20,6 +20,7 @@ of the String. When used properly, intern lowers memory usage by keeping only on
 It is a memory utility.
 
 Demonstration:
+
 
 {% highlight java linenos %}
 String s1 = "hello";
