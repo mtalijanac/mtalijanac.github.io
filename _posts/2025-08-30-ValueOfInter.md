@@ -13,7 +13,7 @@ every Java developer should be deeply familiar with its inner workings.
 And yet, string interning is — at least from my experience — an unknown mechanism 
 to the majority of developers.
 
-So what is it? And should you use it?
+So what Intern is? And why should you use it?
 
 To start _intern_ is a [method](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/String.html#intern())
 of the String. When used properly, intern lowers memory usage by keeping only one instance of the same string in memory.
