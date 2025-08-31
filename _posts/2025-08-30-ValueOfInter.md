@@ -105,23 +105,23 @@ These heavy allocation-deallocation cycles can sometimes behave like real trampo
 
 When software behaves this way, the dominant performance issues are:
   - The time and memory cost of unmarshalling binary data into Java objects
-  - The time and CPU cost of garbage collecting all those objects
+  - The time cost of garbage collecting all those objects
 
 And these are two sides of the same coin. Avoid allocations, and GC improves. Improve GC, and you free up 
-CPU to unmarshall more. Optimise one, and the other improves. In applications like this, almost everything 
-else is irrelevant. A 100,000-line system lives or dies by 1,000 lines of critical code. 
+CPU to unmarshall more. Unmarshal more, GC kicks in. Optimise one, and the other reacts. In applications 
+like this, almost everything else is irrelevant. A 100,000-line system lives or dies by 1,000 lines of critical code. 
 This is a classic distribution of performance sections across source.
 
-The terms to keep track are: *GC* and *allocation stalls*. Both are failure modes, which look like CPU cost.
+The terms to keep track are: **GC** and **allocation stalls**. Both are failure modes, which look like CPU cost.
 GC has significant CPU overhead and the best advice is to not create the garbage. While newer 
 algorithms like ZGC scale better and have latency boundaries - they aren't free and will eat into CPU 
 cycles. Second failure mode is *allocation stall*. It is a form of resource starvation. All allocations 
 _hit the memory_ and there is upper hardware limit to how fast can your computer do it. Allocation heavy 
 loop will easily hit that limit. Both bottlenecks look like CPU usage and are reduced by polluting less.
 
-Which is a full circle to an old-school wisdom. Good ideas rarely go out of fashion. Old computer 
-were slower, and as consequence old code optimised more. We have more memory now, but we also 
-have more data. Thus, old memory tricks should still be useful. Efficiency is the key driver here.
+Which is a full circle to an old-school wisdom. Old computers were slower, and as consequence old code 
+is optimised more. Good ideas rarely go out of fashion. We have more memory now, but we also have more data. 
+Thus, old memory tricks should still be useful. Efficiency is the key driver here.
 
 The path to performance Nirvana is simple:
   - Don't unmarshall **unneeded** data
