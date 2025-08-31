@@ -48,7 +48,7 @@ a map/cache of strings, and the method name stands for _"add this string to the 
 That's all there is to it.
 
 
-## How to Intern Like It's 1999
+### How to Intern Like It's 1999
 
 Interning has a CPU and memory overhead. It ain't free and interned strings stay in pool
 forever. But used wisely, intern lowers memory usage as copies of the equal strings can be 
@@ -58,7 +58,7 @@ common when unmarshalling data.
 
 Imagine loading users using JDBC:
 
-{% highlight java %}
+{% highlight java linenos %}
 ResultSet rs = stmt.executeQuery("SELECT name, gender, age FROM users");
 while (rs.next()) {
     String name = rs.getString("name");
@@ -73,8 +73,8 @@ a good candidate for interning. Out of those three fields *gender* and *age* are
 values. *gender* is typically _male/female/m/f_ — it oscillates between a few possible
 values across all users. Because of this, it can be interned to reduce memory usage. *age* is 
 another low-cardinality field, but this one can't be interned because Java's `Integer` lacks 
-this functionality[^1]. In principal it would be great to intern it, but you can't, there is no
-method to call. The final field, *Name*, is obviously the opposite of low-cardinality. Names are 
+this functionality[^1]. In principal it would be great to intern age, but you can't, as there is no
+method on Integer to call. The final field, *Name*, is obviously the opposite of low-cardinality. Names are 
 unique (there was never and will never be another "Dudley Pound") or at least unique enough, that 
 interning names would waste memory or even cause leaks (pool is forever!).
 
@@ -90,7 +90,7 @@ knew about it. Back then, memory was a scarce resource. Time flies, and in the 2
 But Java being Java, the method remains.
 
 
-## Why Bother Then?
+### Why Bother Then?
 
 In Java, the recommended approach to object reuse is "Don't do it! Allocations are cheap, the GC handles
 it better than you". Java programmers listen, and often it works. But now and then a Java program eats
@@ -119,8 +119,8 @@ cycles. Second failure mode is *allocation stall*. It is a form of resource star
 _hit the memory_ and there is upper hardware limit to how fast can your computer do it. Allocation heavy 
 loop will easily hit that limit. Both bottlenecks look like CPU usage and are reduced by polluting less.
 
-Which is a full circle to circle to old-school wisdom. Good ideas rarely go out of fashion. Old computer 
-were slow, and as consequence old code bite in optimisations more. We have more memory now, but we also 
+Which is a full circle to an old-school wisdom. Good ideas rarely go out of fashion. Old computer 
+were slower, and as consequence old code optimised more. We have more memory now, but we also 
 have more data. Thus, old memory tricks should still be useful. Efficiency is the key driver here.
 
 The path to performance Nirvana is simple:
@@ -134,7 +134,7 @@ this translates in net performance gains.
 
 Think of intern as string-string map:
 
-{% highlight java %}
+{% highlight java linenos %}
 final HashMap<String, String> internMap = new HashMap<>();
 
 String intern(String str) {
@@ -149,17 +149,11 @@ gender = intern( gender );              // replace new object with cached one
 
 To reuse data, all it takes is a map lookup for a value that is equal to its key. This trick works because
 Java's Strings are essentially **value types** - they are unmutable and differ only by state. So it
-doesn't matter to which "female" instance your reference points, and all of them might as much point
-to same. 
+doesn't matter to which "female" instance your gender reference points, and all of them might as much point
+to the same. 
 
 
-And this is not a String-only trick — it works for all **value types**. We could intern `Longs`, `Integers`, 
-or any other type. Any object, as long as it doesn't have [_identity_](https://en.wikipedia.org/wiki/Identity_(object-oriented_programming)), 
-can be interned using a similar map.
-
-
-## A Better Way to Intern
-
+### A Better Way to Intern
 
 This approach to intern has a performance flaw: we need an instance of a object to invoke intern, and thus 
 we need to unmarshall objects *before* hitting the cache. We still pay allocations and unmarshalling cost
@@ -198,7 +192,7 @@ from Eclipse Collections. It is a Map that allows for custom `hashCode`/`equals`
 You create a map, provide a `HashingStrategy`, and it works.
 
 
-## An Even Better Way
+### An Even Better Way
 
 But why stop here? I enjoy performance quests, and this looks like one. Can this code be done better? Faster? Stronger?
 
