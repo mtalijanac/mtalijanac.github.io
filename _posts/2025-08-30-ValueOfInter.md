@@ -103,7 +103,7 @@ CPU like mad and fix is "increase heap size". And now it seems that every Java p
 gigabyte of heap just to start. Ask your opinionated-non-Java-programmer friend and he will tell you 
 harsh words - Java is slow, Java is a memory hog.
 
-A common failure when listening to this advice is running code under heavy allocation pressure. 
+A common failure when taking this advice for granted is running code under heavy allocation pressure. 
 This typically looks like a loop that allocates copious amounts of memory during each iteration,
 only to discard it in the next. In such programs, memory usage jumps up and down like on a trampoline. 
 These heavy allocation-deallocation cycles can sometimes behave like real trampolines and throw things in 
