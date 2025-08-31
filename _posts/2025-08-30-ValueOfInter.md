@@ -248,13 +248,15 @@ a similar structure. So intern implemented using these ideas is more efficient t
 by Java and universally applicable across any marshaled data.
 
 
+### Walking the talk
+
 Following these ideas, I ended up writing such structure:
 [InternTrie](https://github.com/mtalijanac/associations/blob/main/src/main/java/mt/fireworks/pauseless/InternTrie.java). 
 A trie-like structure for interning any **value class**.
 
 And the results? For a small class written in an afternoon, it is undeservedly good. It is much faster 
 than `intern()` itself and often comparable to the speed of allocation.[^4] It is more flexible in 
-usage, as you can have as many differentintern pools as you like, and you can intern any object type. 
+usage, as you can have as many different intern pools as you like, and you can intern any object type. 
 You can even drop a pool when you are done with it. And all of that is just a bonus on top of its 
 primary benefit - in my most impacted application it lowered daily count of full GC cycles by about 15%.
 
