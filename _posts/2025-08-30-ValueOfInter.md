@@ -1,7 +1,6 @@
 ---
 layout: post
 title: The Value of Intern
-subtitle: There's Lots to Learn!
 cover-img: /assets/img/ValueOfIntern/path-in-front.jpg
 gh-repo: mtalijanac/associations
 tags: [java, jvm]
@@ -19,7 +18,7 @@ To start, `intern` is a [method](https://docs.oracle.com/en/java/javase/21/docs/
 
 **Demonstration:**
 
-{% highlight java linenos %}
+{% highlight java %}
 String s1 = "hello";             // an example literal
 String s2 = new String("hello"); // and an equal string
 System.out.println(s1 == s2);    // false, as s1 and s2 are different objects
@@ -30,7 +29,7 @@ System.out.println(s1 == s2);    // true, as interning s2 returned the reference
 
 Two equal strings are instantiated, but after interning, they reference the same instance. The `s1` string is created as a string literal and is thus interned by default. Interning works for any string, not just literals:
 
-{% highlight java linenos %}
+{% highlight java %}
 String s4 = new String("world");
 String s5 = new String("world");
 System.out.println(s4 == s5);    // false, as these are equal but distinct objects
@@ -52,14 +51,14 @@ That's all there is to it.
 ## How to Intern Like It's 1999
 
 Interning has a CPU and memory overhead. It ain't free and interned strings stay in pool
-forever. But used wisely, intern lowers memory usage as copies of the same string can be 
+forever. But used wisely, intern lowers memory usage as copies of the equal strings can be 
 garbage collected. If a program deals with lots of low-cardinality data — a fancy term for 
 _"repeating values"_ — string interning is a useful technique. This scenario is especially 
 common when unmarshalling data.
 
 Imagine loading users using JDBC:
 
-{% highlight java linenos %}
+{% highlight java %}
 ResultSet rs = stmt.executeQuery("SELECT name, gender, age FROM users");
 while (rs.next()) {
     String name = rs.getString("name");
@@ -71,15 +70,16 @@ while (rs.next()) {
 
 There are three fields in the example: *name*, *gender*, and *age*. Low-cardinality data is 
 a good candidate for interning. Out of those three fields *gender* and *age* are low-cardinality
-values. *gender* is typically "male"/"female" or "m"/"f" — it oscillates between a few possible
+values. *gender* is typically _male/female/m/f_ — it oscillates between a few possible
 values across all users. Because of this, it can be interned to reduce memory usage. *age* is 
-another low-cardinality field, but this one can't be interned because `Integer` in Java lacks 
-this functionality[^1]. The final field, *Name*, is obviously the opposite of low-cardinality.
-Names are unique (there was never and will never be another "Dudley Pound") or at least
-unique enough, that interning names would waste memory or even cause leaks (pool is forever!).
+another low-cardinality field, but this one can't be interned because Java's `Integer` lacks 
+this functionality[^1]. In principal it would be great to intern it, but you can't, there is no
+method to call. The final field, *Name*, is obviously the opposite of low-cardinality. Names are 
+unique (there was never and will never be another "Dudley Pound") or at least unique enough, that 
+interning names would waste memory or even cause leaks (pool is forever!).
 
 Now imagine processing millions of rows in a that loop (a nightly batch job, for example). 
-A reasonable change would be to intern the gender:
+In order to save memory, a reasonable change would be to intern the gender:
 
 {% highlight java linenos %}
 String gender = rs.getString("gender").intern();
@@ -97,7 +97,7 @@ it better than you". Java programmers listen, and often it works. But now and th
 CPU like mad and response is just increase heap. And it seems to me that now every Java program needs
 GB of heap just to start. And your non-Java programmer fellow will tell you that Java is a memory hog.
 
-One common failure mode when listening advises like this one is running code under heavy allocation 
+One common failure mode when listening advice like this one is running code under heavy allocation 
 pressure. This typically looks like a loop that allocates copious amounts of memory during each iteration,
 only to discard it in the next. In such programs, memory usage jumps up and down like on a trampoline. 
 These heavy allocation-deallocation cycles can sometimes behave like real trampolines and throw things in 
@@ -132,9 +132,9 @@ Interning lowers memory pressure. While string interning still allocates memory,
 newly allocated object sooner. And with generational GCs and [TLABs](https://shipilev.net/jvm/anatomy-quarks/5-tlabs-and-heap-parsability/)
 this translates in net performance gains.
 
-Think of it as string-string map:
+Think of intern as string-string map:
 
-{% highlight java linenos %}
+{% highlight java %}
 final HashMap<String, String> internMap = new HashMap<>();
 
 String intern(String str) {
@@ -143,22 +143,36 @@ String intern(String str) {
 
 ...
 // The JDBC example becomes:
-String gender = rs.getString("gender"); // deserialize
-gender = intern( gender );              // internalize
+String gender = rs.getString("gender"); // deserialize bytes to new object
+gender = intern( gender );              // replace new object with cached one
 {% endhighlight %}
 
-To reuse data, all it takes is a map lookup for a value that is equal to its key. And this is not a String-only trick — it works for all **value types**. We could intern `Longs`, `Integers`, or any other type. Any object, as long as it doesn't have [_identity_](https://en.wikipedia.org/wiki/Identity_(object-oriented_programming)), can be interned using a similar map.
+To reuse data, all it takes is a map lookup for a value that is equal to its key. This trick works because
+Java's Strings are essentially **value types** - they are unmutable and differ only by state. So it
+doesn't matter to which "female" instance your reference points, and all of them might as much point
+to same. 
 
+
+And this is not a String-only trick — it works for all **value types**. We could intern `Longs`, `Integers`, 
+or any other type. Any object, as long as it doesn't have [_identity_](https://en.wikipedia.org/wiki/Identity_(object-oriented_programming)), 
+can be interned using a similar map.
 
 
 ## A Better Way to Intern
 
-This approach to intern has a flaw: we allocate objects *before* checking the cache. And Java's `intern()` isn't better; it suffers from same issue. To avoid allocation stalls and truly save memory, we should avoid unmarshalling entirely and reuse data *before* it is converted to an object!
+
+This approach to intern has a performance flaw: we need an instance of a object to invoke intern, and thus 
+we need to unmarshall objects *before* hitting the cache. We still pay allocations and unmarshalling cost
+only to discard object immediately. And Java's `intern()` isn't better; it suffers from same issue. 
+
+Better way to intern would be to hit the cache before unmarshalling, and to unarshal object only if it isn't
+present in cache. This way we can avoid allocation stalls, ignore GC cycles and save CPU cycles spent on
+unmarshalling objects.
 
 What we want is to fetch an interned object based on its marshaled representation:
 
-{% highlight java linenos %}
-final HashMap<byte[], String> internMap = new HashMap<>();
+{% highlight java %}
+final HashMap<byte[], String> internMap = new HashMap<>();  // serialised data to instance mapping
 
 String intern(byte[] data) {
     return internMap.computeIfAbsent(data, key -> new String(key, StandardCharsets.UTF_8));
@@ -166,45 +180,79 @@ String intern(byte[] data) {
 
 ...
 byte[] genderData = rs.getBytes("gender"); // no deserialization, just read raw bytes
-String gender = intern( genderData );      // fetch internalized value, and deserilize only on first occurence
+String gender = intern( genderData );      // fetch internalized value, and deserialise only on first occurrence 
 {% endhighlight %}
 
-In this variation, objects are interned based on their marshaled representation. Instances are allocated once and only if they are not found in the cache. This is exactly what is needed.
+In this variation of intern, objects are interned based on their marshaled representation. Instances are 
+allocated once and only if they are not found in the cache. This is exactly what is needed.
 
-Unfortunately, using `HashMap` as intern map won't work because byte arrays have _identity_[^3] and can't be used as keys in a `Map`. As far as the `Map` is concerned, each byte array is a unique instance. You could create your own wrapper around a byte array that fixes the identity issues — a wrapper with a proper `hashCode` and `equals`. However, the goal here isn't just avoiding `new String` but avoiding `new anything`. Any wrapper would require an allocation, so that's a no-go.
+Unfortunately, using `HashMap` as intern map won't work because byte arrays have _identity_[^3] and can't be used as keys
+in a `Map`. As far as the `Map` is concerned, each byte array is a unique instance. You could create your own wrapper around 
+a byte array that fixes the identity issues — a wrapper with a proper implementation of `hashCode` and `equals`. 
+However, the goal here isn't just avoiding `new String` but avoiding `new anything`. Any wrapper around 
+byte array key would require an allocation of wrapper itself, so this approach is a no-go.
 
-To truly fix this issue, we need a different kind of Map — one that does not rely on naive `hashCode`/`equals`. A great candidate is [UnifiedMapWithHashingStrategy](https://www.javaadvent.com/2023/12/hidden-treasures-of-eclipse-collections-2023-edition.html) from Eclipse Collections. It is a Map that allows for custom `hashCode`/`equals` logic for its keys. You create a map, provide a `HashingStrategy`, and it works.
+To truly fix this issue, we need a different kind of Map — one that does not rely on naive `hashCode`/`equals`. A great 
+candidate is [UnifiedMapWithHashingStrategy](https://www.javaadvent.com/2023/12/hidden-treasures-of-eclipse-collections-2023-edition.html) 
+from Eclipse Collections. It is a Map that allows for custom `hashCode`/`equals` logic for its keys. 
+You create a map, provide a `HashingStrategy`, and it works.
+
 
 ## An Even Better Way
 
-But why stop here? I enjoy performance quests, and this looks like one. Can this be done better? Faster? Stronger?
+But why stop here? I enjoy performance quests, and this looks like one. Can this code be done better? Faster? Stronger?
 
 Let's outline the limitations:
-  - In this problem, byte arrays are short (low cardinality implies short strings)
+  - In this problem, all byte arrays keys are short (low cardinality implies short strings)
   - A Map lookup requires a value type using `hashCode` and `equals`
   - Testing the *value* of a byte array means constantly calculating `hashCode` and `equals`
 
-That is to say — we have a nontrivial compute operation right at the heart of the map lookup. A `Map<byte[],String>` solution will work, but it won't scale well.
+That is to say — we have a nontrivial compute operation right at the heart of the map lookup. A `Map<byte[],String>` 
+solution will work, but it won't scale well. The way maps work, hashCode/equlas are new performance bottleneck.
 
-So why not avoid all those issues and use a structure suited for this task — a [Trie](https://en.wikipedia.org/wiki/Trie)? A `Trie<Byte>` sounds much closer to our problem. If we need to walk a byte array (for equality, for `hashCode`), why not walk a Trie instead?
+So why not avoid all those issues and use a structure suited for this task — a [Trie](https://en.wikipedia.org/wiki/Trie)?
+A `Trie<Byte>` sounds much closer to our problem. If we need to cache a Sting from by using a byte array key 
+why not walk a Trie instead? It is a natural fit.
 
-And why do we have to walk bytes at all? One `long` can encode eight bytes. The majority of data arrays will be only a few bytes long. 30 bytes can fit into four `longs` with a few bytes to spare. Thus, matching a `Trie<Long>` would only need to be four nodes deep.
+And why do we have to walk byte arrays at all? One `long` can encode eight bytes in one pass. The majority of data arrays 
+will be only a few bytes long. 30 bytes can fit into four `longs` with a few bytes to spare. Thus, matching a `Trie<Long>` 
+would only need to be four nodes deep.
 
 ![Variations of Trie types]({{ '/assets/img/ValueOfIntern/DogDot.svg' | relative_url }}){: .mx-auto.d-block :}
 
-The image illustrates these ideas. The first Trie encodes "DOG" using Strings. To walk that Trie, we need an instance of String. The second one replaces strings at nodes with byte values, allowing us to find the cached instance of "DOG" by walking the Trie using the byte representation of the word. The final Trie merges multiple bytes into `longs`, avoiding string allocation and shortening the length of the walk.
+The image illustrates these ideas with tries holding words "DOG" and "DOT". The first Trie encodes words using Strings. 
+To walk that Trie, we need an instance of String and we walk it by reading characters of it. This is classic representation of Trie.
 
-Following these ideas, I ended up writing one: [InternTrie](https://github.com/mtalijanac/associations/blob/main/src/main/java/mt/fireworks/pauseless/InternTrie.java). A trie-like structure for interning any **value class**.
+The second one replaces characters at nodes with byte values, allowing us to find the cached instance of "DOG" by walking trie 
+by using the byte representation of the word. This directly translates to what unmarshaller does. Put in byte array, fetch
+a String value with only overhead of walking trie.
 
-And the results? For a small class written in an afternoon, it is undeservedly good. It is much faster than `intern()` itself and often comparable to the speed of allocation.[^4] It is more flexible in usage, as you can have as many different intern pools as you like, and you can intern any object type. All of that is a bonus on top of it removing about 15% of the GC cycles under the loads my applications experience.
+The final Trie merges multiple bytes into longs. Greatly reducing length of walk, while improving efficiency compared to 
+bytes version of trie.
 
-So what is the value of `Intern` then? As a friend of mine said: "It all goes back to a C64 and a need." [Good ideas](https://en.wikipedia.org/wiki/Flyweight_pattern) don't age...
+
+And finally this is not a String-only trick — **it works for all value types.** We could intern Longs, Integers, or any other type.
+Any object, as long as it doesn’t have identity, can be interned using a similar map. So intern implemented using these ideas
+is more efficient than one provided by Java and universally applicable across any marshalled data.
+
+
+Following these ideas, I ended up writing one: [InternTrie](https://github.com/mtalijanac/associations/blob/main/src/main/java/mt/fireworks/pauseless/InternTrie.java). 
+A trie-like structure for interning any **value class**.
+
+And the results? For a small class written in an afternoon, it is undeservedly good. It is much faster than `intern()`
+itself and often comparable to the speed of allocation.[^4] It is more flexible in usage, as you can have as many different 
+intern pools as you like, and you can intern any object type. All of that is a bonus on top of it removing about 15% of 
+the GC cycles under the loads my applications experience.
+
+
+So what is the value of `Intern` then? As a friend of mine said: "It all goes back to a C64 and a need." 
+[Good ideas](https://en.wikipedia.org/wiki/Flyweight_pattern) don't age...
 
 — Marko Talijanac, April 2025
 
 ---
 
 [^1]: In Java, `Integer` values in the range -128 to 127 are cached, but not using an interning mechanism.
-[^2]: ZGC is a state-of-the-art GC, and its expected behavior is sub-millisecond pauses. However, it is possible to break that behavior by running a heavy allocation load combined with constrained resources. While I have not tried ZGC yet, I have tested similar algorithms like Metronome and Shenandoah, and both faced similar issues. They do work as advertised, but to stay under the breaking point under the loads seen by my applications, both required significantly higher CPU and memory resources.
+[^2]: ZGC is a state-of-the-art GC, and its expected behavior is sub-millisecond pauses. However, it is possible to break that by running a heavy allocation load combined with constrained resources. It is also CPU heavy.
 [^3]: Arrays in Java have `hashCode` and `equals` implementations based on the memory address of the array, not its content. Thus, two arrays with identical content are never considered equal. Each one is unique. This 'property' makes them unusable as Map keys or for any other operation based on data equality.
 [^4]: It depends on the JDK version and time of day, but on my laptop, it ranges from twice as slow (OpenJDK 8) to twice as fast (OpenJDK 21) for short byte arrays (length <= 7 bytes).
