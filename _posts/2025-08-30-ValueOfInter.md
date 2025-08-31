@@ -2,8 +2,8 @@
 layout: post
 title: The Value of Intern
 cover-img: /assets/img/ValueOfIntern/path_wide.jpg
-thumbnail-img: /assets/img/ValueOfIntern/path_narrow.png
-share-img: /assets/img/ValueOfIntern/path_narrow.png
+thumbnail-img: /assets/img/ValueOfIntern/path_narrow.jpg
+share-img: /assets/img/ValueOfIntern/path_narrow.jpg
 gh-repo: mtalijanac/associations
 tags: [java, jvm]
 author: Marko Talijanac
@@ -152,15 +152,15 @@ gender = intern( gender );              // replace new object with cached one
 
 To reuse data, all it takes is a map lookup for a value that is equal to its key. This trick works because
 Java's Strings are essentially **value types** - they are unmutable and differ only by state. So it
-doesn't matter to which "female" instance your gender reference points, and all of them might as much point
+doesn't matter to which "female" instance your gender reference points. All of them might as much point
 to the same. 
 
 
 ### A Better Way to Intern
 
 This approach to intern has a performance flaw: we need an instance of a object to invoke intern, and thus 
-we need to unmarshal objects *before* hitting the cache. We still pay allocations and unmarshaling cost
-only to discard object immediately. And Java's `intern()` isn't better; it suffers from same issue. 
+we need to unmarshal objects *before* hitting the cache. We pay allocations and unmarshaling cost
+only to discard object immediately.
 
 Better way to intern would be to hit the cache before unmarshaling, and to unmarshal object only if it isn't
 present in cache. This way we can avoid allocation stalls, ignore GC cycles and reuse CPU cycles spent on
@@ -190,7 +190,7 @@ However, the goal here isn't just avoiding _new String_ but avoiding **new anyth
 byte array key would require an allocation of wrapper itself, so this approach is a no-go.
 
 To truly fix this issue, we need a different kind of Map — one that does not rely on naive `hashCode`/`equals`. A great 
-candidate is [UnifiedMapWithHashingStrategy](https://www.javaadvent.com/2023/12/hidden-treasures-of-eclipse-collections-2023-edition.html) 
+one is [UnifiedMapWithHashingStrategy](https://www.javaadvent.com/2023/12/hidden-treasures-of-eclipse-collections-2023-edition.html) 
 from Eclipse Collections. It is a Map that allows for custom `hashCode`/`equals` logic for its keys. 
 You create a map, provide a `HashingStrategy`, and it works.
 
@@ -210,11 +210,11 @@ solution will work, but it won't scale well. The way maps work, hashCode/equlas 
 So why not avoid all those issues and use a structure suited for this task — a [Trie](https://en.wikipedia.org/wiki/Trie)?
 If we need to cache a String, why not walk a Trie instead? It is a natural fit.
 
-And why do we have to walk string chars at all? Why not walk bytes of marshaled value? By using `Trie<Byte>' we do
-not need to unmarshal data into String at all. And than why use bytes for binary comaparsion? Why not longs?
-One `long` can encode eight bytes in one pass. 
+And why do we have to walk string chars at all? Why not walk bytes of marshaled value? By using `Trie<Byte>` we do
+not need to unmarshal data into String at all!!! And even then we can further optimise. 
+Why use bytes for binary comparison? Why not longs? Because `long` can encode eight bytes in one fetch. 
 
-Given that the majority of data arrays will be only a few bytes long (cosequence of low cardinality) we can reduce
+Given that the majority of data arrays will be only be few bytes long (common consequence of low cardinality) we can reduce
 Trie depth. 30 bytes can fit into four `longs` with a few bytes to spare. Thus, matching a `Trie<Long>` 
 would only need to be four nodes deep.
 
@@ -242,7 +242,7 @@ A trie-like structure for interning any **value class**.
 And the results? For a small class written in an afternoon, it is undeservedly good. It is much faster than `intern()`
 itself and often comparable to the speed of allocation.[^4] It is more flexible in usage, as you can have as many different 
 intern pools as you like, and you can intern any object type. And all of that is just a bonus on top of it removing 
-about 15% of the full GC cycles which my applications experience under the load.
+about 15% full GC cycles which my applications endure daily.
 
 So back to title - What is the value of `Intern` then? As a friend of mine said: "It all goes back to a C64 and a need." 
 [Good ideas](https://en.wikipedia.org/wiki/Flyweight_pattern) don't age...
