@@ -1,7 +1,7 @@
 ---
 layout: post
 title: The Value of Intern
-subtitle: String walks into a jvm, with a fellow string
+subtitle: String walks into a jvm...
 cover-img: /assets/img/ValueOfIntern/path_wide.jpg
 thumbnail-img: /assets/img/ValueOfIntern/path_narrow.jpg
 share-img: /assets/img/ValueOfIntern/path_narrow.jpg
