@@ -77,11 +77,11 @@ values across all users. Because of this, it can be interned to reduce memory us
 another low-cardinality field. In principal it would be great to intern age, but it can't be 
 done, as Java's `Integer` lacks this functionality[^1]. There is no intern method on Integer 
 to invoke. The final field, *Name*, is obviously the opposite of low-cardinality. Names are 
-unique or at least unique enough, that interning names would waste memory 
-or even cause leaks (remember - pool is forever).
+unique or at least unique enough, that interning names would waste memory or even cause leaks.
+Remember - intern pool is forever!
 
-Imagine processing millions of rows in a that loop (a nightly batch job, for example). 
-In order to save memory, a reasonable change would be to intern the gender:
+Imagine processing millions of rows in a loop like that. It is common nigh batch job, for example. 
+In order to save memory, a reasonable change would be to intern the gender of user:
 
 {% highlight java linenos %}
 String gender = rs.getString("gender").intern();
@@ -96,8 +96,8 @@ But Java being Java, the method remains.
 
 In Java, the recommended approach to object reuse is: "Don't do it! Allocations are cheap, the GC handles
 it better than you". Java programmers listen, and often it works. But now and then a Java program eats
-CPU like mad and fix is "increase heap size". And it seems now that every Java program needs
-gigabyte of heap just to start. Ask your opinioated-non-Java-programmer friend and he will tell you 
+CPU like mad and fix is "increase heap size". And now it seems that every Java program needs
+gigabyte of heap just to start. Ask your opinionated-non-Java-programmer friend and he will tell you 
 harsh truth - Java is slow, Java is a memory hog.
 
 One common failure mode when listening advice like that is running code under heavy allocation 
