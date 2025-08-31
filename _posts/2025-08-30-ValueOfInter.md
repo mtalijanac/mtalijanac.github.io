@@ -239,11 +239,10 @@ A trie-like structure for interning any **value class**.
 
 And the results? For a small class written in an afternoon, it is undeservedly good. It is much faster than `intern()`
 itself and often comparable to the speed of allocation.[^4] It is more flexible in usage, as you can have as many different 
-intern pools as you like, and you can intern any object type. All of that is a bonus on top of it removing about 15% of 
-the GC cycles under the loads my applications experience.
+intern pools as you like, and you can intern any object type. And all of that is just a bonus on top of it removing 
+about 15% of the full GC cycles which my applications experience under the load.
 
-
-So what is the value of `Intern` then? As a friend of mine said: "It all goes back to a C64 and a need." 
+So back to title - What is the value of `Intern` then? As a friend of mine said: "It all goes back to a C64 and a need." 
 [Good ideas](https://en.wikipedia.org/wiki/Flyweight_pattern) don't age...
 
 — Marko Talijanac, April 2025
