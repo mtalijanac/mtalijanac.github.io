@@ -198,7 +198,7 @@ You create a map, provide a `HashingStrategy`, and it works.
 But why stop here? I enjoy performance quests, and this looks like one. Can this code be done better? Faster? Stronger?
 
 Let's outline the limitations:
-  - all byte arrays keys are short (low cardinality implies short strings)
+  - All byte arrays keys are short (low cardinality usually implies short strings)
   - A Map lookup requires a value type with proper `hashCode` and `equals`
   - Testing the *value* of a byte array means constantly calculating `hashCode` and `equals`
 
