@@ -19,7 +19,7 @@ So what is `intern()`? And why should you use it?
 
 To start, `intern` is a [method](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/String.html#intern()) of the `String` class. When used properly, `intern` lowers memory usage by ensuring only one instance of a given string value exists in memory. It is a memory optimization utility.
 
-**Demonstration:**
+Demonstration:
 
 {% highlight java linenos %}
 String s1 = new String("world");
