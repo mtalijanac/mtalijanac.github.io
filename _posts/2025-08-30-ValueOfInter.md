@@ -1,7 +1,9 @@
 ---
 layout: post
 title: The Value of Intern
-cover-img: /assets/img/ValueOfIntern/path-in-front.jpg
+cover-img: /assets/img/ValueOfIntern/path_wide.jpg
+thumbnail-img: /assets/img/ValueOfIntern/path_narrow.png
+share-img: /assets/img/ValueOfIntern/path_narrow.png
 gh-repo: mtalijanac/associations
 tags: [java, jvm]
 author: Marko Talijanac
