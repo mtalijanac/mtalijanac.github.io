@@ -112,7 +112,7 @@ CPU to unmarshall more. Unmarshal more, GC kicks in. Optimise one, and the other
 like this, almost everything else is irrelevant. A 100,000-line system lives or dies by 1,000 lines of critical code. 
 This is a classic distribution of performance sections across source.
 
-The terms to keep track are: **GC** and **allocation stalls**. Both are failure modes, which look like CPU cost.
+The terms to keep track are: *GC usage* and *allocation stalls*. Both are failure modes, which look like CPU cost.
 GC has significant CPU overhead and the best advice is to not create the garbage. While newer 
 algorithms like ZGC scale better and have latency boundaries - they aren't free and will eat into CPU 
 cycles. Second failure mode is *allocation stall*. It is a form of resource starvation. All allocations 
@@ -165,7 +165,7 @@ unmarshalling objects.
 
 What we want is to fetch an interned object based on its marshaled representation:
 
-{% highlight java %}
+{% highlight java linenos %}
 final HashMap<byte[], String> internMap = new HashMap<>();  // serialised data to instance mapping
 
 String intern(byte[] data) {
