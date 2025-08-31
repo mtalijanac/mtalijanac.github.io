@@ -228,34 +228,38 @@ matching a `Trie<Long>` for a 30 byte object would only need to be four nodes de
 
 ![Variations of Trie types]({{ '/assets/img/ValueOfIntern/DogDot.svg' | relative_url }}){: .mx-auto.d-block :}
 
-The image illustrates these ideas with tries holding words "DOG" and "DOT". The first trie encodes words using Strings. 
-To walk that `Trie<String>`, we need an instance of String and we will walk trie by comparing string characters to
-nodes of trie. This is classic representation of trie.
+The image illustrates these ideas with tries holding words "DOG" and "DOT". The first trie encodes 
+words using Strings. To walk that `Trie<String>`, we need an instance of String and we will walk 
+that trie by comparing string characters to nodes of trie. This is classic representation of trie.
+It is something what you would see on [Wikipedia article](https://en.wikipedia.org/wiki/Trie) as example.
 
 The second trie, `Trie<Byte>` implementation, replaces characters for byte values, allowing us to 
 reach instance of "DOG" by walking structure using the byte representation of the word. This directly 
 translates to what unmarshaler does. Put in byte array, fetch a String value. 
 Overhead of converting bytes to object is transfered into walking trie.
 
-The final strucuture is `Trie<Long>` which merges multiple bytes into long. Thus greatly reducing length of walk,
-and improving efficiency compared to bytes version of trie. Besides switching bytes for long it is the same concept
-as byte version.
+The final strucuture is `Trie<Long>` which merges multiple bytes into long. Thus greatly reducing 
+length of walk, and improving efficiency compared to bytes version of trie. Besides switching bytes 
+for longs it is the same concept as byte version.
 
-And finally this is not a String-only trick — **it works for all value types.** We could intern Longs, Integers, or any other type.
-Any object, as long as it does not have identity, can be interned using a similar structure. So intern implemented using these ideas
-is more efficient than one provided by Java and universally applicable across any marshaled data.
+And finally this is not a String-only trick — **it works for all value types.** We could intern Longs, 
+Integers, or any other type. Any object, as long as it does not have identity, can be interned using 
+a similar structure. So intern implemented using these ideas is more efficient than one provided 
+by Java and universally applicable across any marshaled data.
 
 
-Following these ideas, I ended up writing one: [InternTrie](https://github.com/mtalijanac/associations/blob/main/src/main/java/mt/fireworks/pauseless/InternTrie.java). 
+Following these ideas, I ended up writing such structure:
+[InternTrie](https://github.com/mtalijanac/associations/blob/main/src/main/java/mt/fireworks/pauseless/InternTrie.java). 
 A trie-like structure for interning any **value class**.
 
-And the results? For a small class written in an afternoon, it is undeservedly good. It is much faster than `intern()`
-itself and often comparable to the speed of allocation.[^4] It is more flexible in usage, as you can have as many different 
-intern pools as you like, and you can intern any object type. And all of that is just a bonus on top of its primary
-benefit - in my most impacted application it lowered daily count of full GC cycles by about 15%.
+And the results? For a small class written in an afternoon, it is undeservedly good. It is much faster 
+than `intern()` itself and often comparable to the speed of allocation.[^4] It is more flexible in 
+usage, as you can have as many differentintern pools as you like, and you can intern any object type. 
+And all of that is just a bonus on top of its primary benefit - in my most impacted application it 
+lowered daily count of full GC cycles by about 15%.
 
-So back to title - What is the value of `Intern` then? As a friend of mine said: "It all goes back to a C64 and a need." 
-[Good ideas](https://en.wikipedia.org/wiki/Flyweight_pattern) don't age...
+So back to title - What is the value of `Intern` then? As a friend of mine said: "It all goes back 
+to a C64 and a need." [Good ideas](https://en.wikipedia.org/wiki/Flyweight_pattern) don't age...
 
 — Marko Talijanac, April 2025
 
