@@ -54,7 +54,7 @@ Interning has a CPU and memory overhead. It ain't free and interned strings stay
 forever. But used wisely, intern lowers memory usage as copies of the equal strings can be 
 garbage collected. If a program deals with lots of low-cardinality data — a fancy term for 
 _"repeating values"_ — string interning is a useful technique. This scenario is especially 
-common when unmarshalling data.
+common when unmarshaling data.
 
 Imagine loading users using JDBC:
 
@@ -72,13 +72,13 @@ There are three fields in the example: *name*, *gender*, and *age*. Low-cardinal
 a good candidate for interning. Out of those three fields *gender* and *age* are low-cardinality
 values. *gender* is typically _male/female/m/f_ — it oscillates between a few possible
 values across all users. Because of this, it can be interned to reduce memory usage. *age* is 
-another low-cardinality field, but this one can't be interned because Java's `Integer` lacks 
-this functionality[^1]. In principal it would be great to intern age, but you can't, as there is no
-method on Integer to call. The final field, *Name*, is obviously the opposite of low-cardinality. Names are 
-unique (there was never and will never be another "Dudley Pound") or at least unique enough, that 
-interning names would waste memory or even cause leaks (pool is forever!).
+another low-cardinality field. In principal it would be great to intern age, but it can't be 
+done, as Java's `Integer` lacks this functionality[^1]. There is no intern method on Integer 
+to invoke. The final field, *Name*, is obviously the opposite of low-cardinality. Names are 
+unique or at least unique enough, that interning names would waste memory 
+or even cause leaks (remember - pool is forever).
 
-Now imagine processing millions of rows in a that loop (a nightly batch job, for example). 
+Imagine processing millions of rows in a that loop (a nightly batch job, for example). 
 In order to save memory, a reasonable change would be to intern the gender:
 
 {% highlight java linenos %}
@@ -95,24 +95,25 @@ But Java being Java, the method remains.
 In Java, the recommended approach to object reuse is: "Don't do it! Allocations are cheap, the GC handles
 it better than you". Java programmers listen, and often it works. But now and then a Java program eats
 CPU like mad and fix is "increase heap size". And it seems now that every Java program needs
-gigabyte of heap just to start. Ask your non-Java-programmer fellow and he will tell you that Java is a memory hog.
+gigabyte of heap just to start. Ask your opinioated-non-Java-programmer friend and he will tell you 
+harsh truth - Java is slow, Java is a memory hog.
 
-One common failure mode when listening advice like this one is running code under heavy allocation 
+One common failure mode when listening advice like that is running code under heavy allocation 
 pressure. This typically looks like a loop that allocates copious amounts of memory during each iteration,
 only to discard it in the next. In such programs, memory usage jumps up and down like on a trampoline. 
 These heavy allocation-deallocation cycles can sometimes behave like real trampolines and throw things in 
 [unwanted directions](https://youtu.be/L68zxvl2LPY?t=1850).[^2]
 
 When software behaves this way, the dominant performance issues are:
-  - The time and memory cost of unmarshalling binary data into Java objects
+  - The time and memory cost of unmarshaling binary data into Java objects
   - The time cost of garbage collecting all those objects
 
 And these are two sides of the same coin. Avoid allocations, and GC improves. Improve GC, and you free up 
-CPU to unmarshall more. Unmarshal more, GC kicks in. Optimise one, and the other reacts. In applications 
+CPU to unmarshal more. Unmarshal more, GC kicks in. Optimise one, and the other reacts. In applications 
 like this, almost everything else is irrelevant. A 100,000-line system lives or dies by 1,000 lines of critical code. 
 This is a classic distribution of performance sections across source.
 
-The terms to keep track are: *GC usage* and *allocation stalls*. Both are failure modes, which look like CPU cost.
+The terms to keep track are: *high GC usage* and *allocation stalls*. Both are failure modes, which look like CPU cost.
 GC has significant CPU overhead and the best advice is to not create the garbage. While newer 
 algorithms like ZGC scale better and have latency boundaries - they aren't free and will eat into CPU 
 cycles. Second failure mode is *allocation stall*. It is a form of resource starvation. All allocations 
@@ -124,7 +125,7 @@ is optimised more. Good ideas rarely go out of fashion. We have more memory now,
 Thus, old memory tricks should still be useful. Efficiency is the key driver here.
 
 The path to performance Nirvana is simple:
-  - Don't unmarshall **unneeded** data
+  - Don't unmarshal **unneeded** data
   - Reuse **low-cardinality** data
 
 The first one is common sense - don't do what you don't need. The second one is a cache. An intern cache.
@@ -156,12 +157,12 @@ to the same.
 ### A Better Way to Intern
 
 This approach to intern has a performance flaw: we need an instance of a object to invoke intern, and thus 
-we need to unmarshall objects *before* hitting the cache. We still pay allocations and unmarshalling cost
+we need to unmarshal objects *before* hitting the cache. We still pay allocations and unmarshaling cost
 only to discard object immediately. And Java's `intern()` isn't better; it suffers from same issue. 
 
-Better way to intern would be to hit the cache before unmarshalling, and to unarshal object only if it isn't
-present in cache. This way we can avoid allocation stalls, ignore GC cycles and save CPU cycles spent on
-unmarshalling objects.
+Better way to intern would be to hit the cache before unmarshaling, and to unmarshal object only if it isn't
+present in cache. This way we can avoid allocation stalls, ignore GC cycles and reuse CPU cycles spent on
+unmarshaling objects.
 
 What we want is to fetch an interned object based on its marshaled representation:
 
@@ -183,7 +184,7 @@ allocated once and only if they are not found in the cache. This is exactly what
 Unfortunately, using `HashMap` as intern map won't work because byte arrays have _identity_[^3] and can't be used as keys
 in a `Map`. As far as the `Map` is concerned, each byte array is a unique instance. You could create your own wrapper around 
 a byte array that fixes the identity issues — a wrapper with a proper implementation of `hashCode` and `equals`. 
-However, the goal here isn't just avoiding `new String` but avoiding `new anything`. Any wrapper around 
+However, the goal here isn't just avoiding _new String_ but avoiding **new anything**. Any wrapper around 
 byte array key would require an allocation of wrapper itself, so this approach is a no-go.
 
 To truly fix this issue, we need a different kind of Map — one that does not rely on naive `hashCode`/`equals`. A great 
@@ -197,29 +198,32 @@ You create a map, provide a `HashingStrategy`, and it works.
 But why stop here? I enjoy performance quests, and this looks like one. Can this code be done better? Faster? Stronger?
 
 Let's outline the limitations:
-  - In this problem, all byte arrays keys are short (low cardinality implies short strings)
-  - A Map lookup requires a value type using `hashCode` and `equals`
+  - all byte arrays keys are short (low cardinality implies short strings)
+  - A Map lookup requires a value type with proper `hashCode` and `equals`
   - Testing the *value* of a byte array means constantly calculating `hashCode` and `equals`
 
 That is to say — we have a nontrivial compute operation right at the heart of the map lookup. A `Map<byte[],String>` 
-solution will work, but it won't scale well. The way maps work, hashCode/equlas are new performance bottleneck.
+solution will work, but it won't scale well. The way maps work, hashCode/equlas would be performance bottleneck.
 
 So why not avoid all those issues and use a structure suited for this task — a [Trie](https://en.wikipedia.org/wiki/Trie)?
-A `Trie<Byte>` sounds much closer to our problem. If we need to cache a Sting from by using a byte array key 
-why not walk a Trie instead? It is a natural fit.
+If we need to cache a String, why not walk a Trie instead? It is a natural fit.
 
-And why do we have to walk byte arrays at all? One `long` can encode eight bytes in one pass. The majority of data arrays 
-will be only a few bytes long. 30 bytes can fit into four `longs` with a few bytes to spare. Thus, matching a `Trie<Long>` 
+And why do we have to walk string chars at all? Why not walk bytes of marshaled value? By using `Trie<Byte>' we do
+not need to unmarshal data into String at all. And than why use bytes for binary comaparsion? Why not longs?
+One `long` can encode eight bytes in one pass. 
+
+Given that the majority of data arrays will be only a few bytes long (cosequence of low cardinality) we can reduce
+Trie depth. 30 bytes can fit into four `longs` with a few bytes to spare. Thus, matching a `Trie<Long>` 
 would only need to be four nodes deep.
 
 ![Variations of Trie types]({{ '/assets/img/ValueOfIntern/DogDot.svg' | relative_url }}){: .mx-auto.d-block :}
 
 The image illustrates these ideas with tries holding words "DOG" and "DOT". The first Trie encodes words using Strings. 
-To walk that Trie, we need an instance of String and we walk it by reading characters of it. This is classic representation of Trie.
+To walk that Trie, we need an instance of String and we walk it by comparing characters. This is classic representation of Trie.
 
 The second one replaces characters at nodes with byte values, allowing us to find the cached instance of "DOG" by walking trie 
-by using the byte representation of the word. This directly translates to what unmarshaller does. Put in byte array, fetch
-a String value with only overhead of walking trie.
+by using the byte representation of the word. This directly translates to what unmarshaler does. Put in byte array, fetch
+a String value with only overhead of converting bytes to object is walking trie.
 
 The final Trie merges multiple bytes into longs. Greatly reducing length of walk, while improving efficiency compared to 
 bytes version of trie.
@@ -227,7 +231,7 @@ bytes version of trie.
 
 And finally this is not a String-only trick — **it works for all value types.** We could intern Longs, Integers, or any other type.
 Any object, as long as it doesn’t have identity, can be interned using a similar map. So intern implemented using these ideas
-is more efficient than one provided by Java and universally applicable across any marshalled data.
+is more efficient than one provided by Java and universally applicable across any marshaled data.
 
 
 Following these ideas, I ended up writing one: [InternTrie](https://github.com/mtalijanac/associations/blob/main/src/main/java/mt/fireworks/pauseless/InternTrie.java). 
