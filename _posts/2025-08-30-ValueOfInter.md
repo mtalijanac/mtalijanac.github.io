@@ -221,12 +221,12 @@ would only need to be four nodes deep.
 The image illustrates these ideas with tries holding words "DOG" and "DOT". The first Trie encodes words using Strings. 
 To walk that Trie, we need an instance of String and we walk it by comparing characters. This is classic representation of Trie.
 
-The second one replaces characters at nodes with byte values, allowing us to find the cached instance of "DOG" by walking trie 
+The second Trie replaces characters at nodes with byte values, allowing us to find the cached instance of "DOG" by walking trie 
 by using the byte representation of the word. This directly translates to what unmarshaler does. Put in byte array, fetch
 a String value with only overhead of converting bytes to object is walking trie.
 
-The final Trie merges multiple bytes into longs. Greatly reducing length of walk, while improving efficiency compared to 
-bytes version of trie.
+The final Trie merges multiple bytes into longs. Greatly reducing length of walk, and improving efficiency compared to 
+bytes version of trie. It is the same concept but longer numbers.
 
 
 And finally this is not a String-only trick — **it works for all value types.** We could intern Longs, Integers, or any other type.
