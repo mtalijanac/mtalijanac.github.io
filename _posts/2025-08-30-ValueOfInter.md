@@ -160,7 +160,7 @@ doesn't matter to which "female" instance your gender reference points. And give
 might as much point to the same. 
 
 
-### A path to Nirvana begins with small step
+### A path to Nirvana
 
 This approach to intern has a performance flaw: we need an instance of a object to invoke intern, and thus 
 we need to unmarshal objects *before* hitting the cache. We pay allocations and unmarshaling cost
