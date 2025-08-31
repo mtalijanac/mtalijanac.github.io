@@ -18,7 +18,7 @@ To start, `intern` is a [method](https://docs.oracle.com/en/java/javase/21/docs/
 
 **Demonstration:**
 
-{% highlight java %}
+{% highlight java linenos %}
 String s1 = "hello";             // an example literal
 String s2 = new String("hello"); // and an equal string
 System.out.println(s1 == s2);    // false, as s1 and s2 are different objects
@@ -29,7 +29,7 @@ System.out.println(s1 == s2);    // true, as interning s2 returned the reference
 
 Two equal strings are instantiated, but after interning, they reference the same instance. The `s1` string is created as a string literal and is thus interned by default. Interning works for any string, not just literals:
 
-{% highlight java %}
+{% highlight java linenos %}
 String s4 = new String("world");
 String s5 = new String("world");
 System.out.println(s4 == s5);    // false, as these are equal but distinct objects
