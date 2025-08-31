@@ -20,38 +20,39 @@ To start, `intern` is a [method](https://docs.oracle.com/en/java/javase/21/docs/
 **Demonstration:**
 
 {% highlight java linenos %}
-String s1 = "hello";
-String s2 = new String("hello");
-System.out.println(s1 == s2); // false, as s1 and s2 are different objects
+String s1 = "hello";             // an example literal
+String s2 = new String("hello"); // and an equal string
+System.out.println(s1 == s2);    // false, as s1 and s2 are different objects
 
 s2 = s2.intern();
-System.out.println(s1 == s2); // true, as interning s2 returns a reference to s1
+System.out.println(s1 == s2);    // true, as interning s2 returned the reference to s1
 {% endhighlight %}
 
-Two equal strings are instantiated, but after interning, they reference the same instance. The `s1` string is created as a string literal and is thus interned by default. But interning works for any string, not just literals:
+Two equal strings are instantiated, but after interning, they reference the same instance. The `s1` string is created as a string literal and is thus interned by default. Interning works for any string, not just literals:
 
 {% highlight java linenos %}
 String s4 = new String("world");
 String s5 = new String("world");
-System.out.println(s4 == s5); // false, again, these are equal but distinct objects
+System.out.println(s4 == s5);    // false, as these are equal but distinct objects
 
 String s6 = s4.intern();
 String s7 = s5.intern();
-System.out.println(s6 == s7); // true, as their interned values point to the same instance
+System.out.println(s6 == s7);    // true, after interning all references point to the same instance
 {% endhighlight %}
 
 How does interning work? An internal string pool is prepopulated at program start with all 
 [string literals](https://www.baeldung.com/java-literals). When `intern()` is called on 
 a string, this pool is searched for an equal string. If found, the one from the pool is 
 returned. Otherwise, the current string is added to the pool. Thus, interning is essentially 
-a cache of strings, and the method name stands for _"add this string to the internal pool"_.
+a map/cache of strings, and the method name stands for _"add this string to the internal pool"_.
 
 That's all there is to it.
 
 
 ## How to Intern Like It's 1999
 
-Interning has a CPU overhead, but it lowers memory usage as copies of the same string can be 
+Interning has a CPU and memory overhead. It ain't free and interned strings stay in pool
+forever. But used wisely, intern lowers memory usage as copies of the same string can be 
 garbage collected. If a program deals with lots of low-cardinality data — a fancy term for 
 _"repeating values"_ — string interning is a useful technique. This scenario is especially 
 common when unmarshalling data.
@@ -64,7 +65,7 @@ while (rs.next()) {
     String name = rs.getString("name");
     String gender = rs.getString("gender");
     Integer age = rs.getInt("age");    
-    // ... do something with this fields ...
+    // ... proceed to do something with this fields ...
 }
 {% endhighlight %}
 
@@ -74,39 +75,64 @@ values. *gender* is typically "male"/"female" or "m"/"f" — it oscillates betwe
 values across all users. Because of this, it can be interned to reduce memory usage. *age* is 
 another low-cardinality field, but this one can't be interned because `Integer` in Java lacks 
 this functionality[^1]. The final field, *Name*, is obviously the opposite of low-cardinality.
-Names are often unique (there was never and will never be another "Dudley Pound") or at leaste
-unique enough, that interning names would waste memory or even cause leaks.
+Names are unique (there was never and will never be another "Dudley Pound") or at least
+unique enough, that interning names would waste memory or even cause leaks (pool is forever!).
 
-Now imagine processing millions of rows in a tight loop (a nightly batch job, for example). 
+Now imagine processing millions of rows in a that loop (a nightly batch job, for example). 
 A reasonable change would be to intern the gender:
 
 {% highlight java linenos %}
 String gender = rs.getString("gender").intern();
 {% endhighlight %}
 
-In the 1990s, interning strings was common, and every developer knew about it. Back then, memory 
-was a scarce resource. Time flies, and in the 2020s, few use it. But Java being Java, the method remains.
+And that is what programmers did in the 1990s. Interning strings was common, and every developer
+knew about it. Back then, memory was a scarce resource. Time flies, and in the 2020s, few use it.
+But Java being Java, the method remains.
 
 
 ## Why Bother Then?
 
-If interning is old school, why bother with it? In Java, the recommended approach is often "don't worry, allocations are cheap, the GC handles it better than you." Java programmers listen, and now every Java program seems to need 1.5 GB of heap just to start. And every non-Java programmer says, "Java eats memory."
+In Java, the recommended approach to object reuse is "Don't do it! Allocations are cheap, the GC handles
+it better than you". Java programmers listen, and often it works. But now and then a Java program eats
+CPU like mad and response is just increase heap. And it seems to me that now every Java program needs
+GB of heap just to start. And your non-Java programmer fellow will tell you that Java is a memory hog.
 
-Well, good ideas rarely go out of fashion. New technologies often repeat the same old limitations but on a different scale. Yes, we have more memory now, but we also have more data. Thus, old memory tricks should still be useful. Efficiency is the key driver here.
+One common failure mode when listening advises like this one is running code under heavy allocation 
+pressure. This typically looks like a loop that allocates copious amounts of memory during each iteration,
+only to discard it in the next. In such programs, memory usage jumps up and down like on a trampoline. 
+These heavy allocation-deallocation cycles can sometimes behave like real trampolines and throw things in 
+[unwanted directions](https://youtu.be/L68zxvl2LPY?t=1850).[^2]
 
-One common failure mode of modern software is running code under heavy allocation pressure. This typically looks like a loop that allocates copious amounts of memory during each iteration, only to discard it in the next. In such programs, memory usage jumps up and down like on a trampoline. These heavy allocation-deallocation cycles (GC pauses and allocation stalls) can sometimes behave like real trampolines and throw things in [unwanted directions](https://youtu.be/L68zxvl2LPY?t=1850).[^2]
+When software behaves this way, the dominant performance issues are:
+  - The time and memory cost of unmarshalling binary data into Java objects
+  - The time and CPU cost of garbage collecting all those objects
 
-When software behaves this way, the dominant performance issues are usually:
-  - The time and memory cost of unmarshalling binary data into Java objects (CPU costs and allocation stalls)
-  - The time and CPU cost of garbage collecting all those objects (CPU overhead and interruptions)
+And these are two sides of the same coin. Avoid allocations, and GC improves. Improve GC, and you free up 
+CPU to unmarshall more. Optimise one, and the other improves. In applications like this, almost everything 
+else is irrelevant. A 100,000-line system lives or dies by 1,000 lines of critical code. 
+This is a classic distribution of performance sections across source.
 
-These are two sides of the same coin. Avoid allocations, and GC improves. Improve GC, and you free up CPU to allocate faster. Optimize one, and the other improves. In applications like this, almost everything else is irrelevant. A 100,000-line system lives or dies by 1,000 lines of critical code. This is a classic distribution of performance sections across source.
+The terms to keep track are: *GC* and *allocation stalls*. Both are failure modes, which look like CPU cost.
+GC has significant CPU overhead and the best advice is to not create the garbage. While newer 
+algorithms like ZGC scale better and have latency boundaries - they aren't free and will eat into CPU 
+cycles. Second failure mode is *allocation stall*. It is a form of resource starvation. All allocations 
+_hit the memory_ and there is upper hardware limit to how fast can your computer do it. Allocation heavy 
+loop will easily hit that limit. Both bottlenecks look like CPU usage and are reduced by polluting less.
+
+Which is a full circle to circle to old-school wisdom. Good ideas rarely go out of fashion. Old computer 
+were slow, and as consequence old code bite in optimisations more. We have more memory now, but we also 
+have more data. Thus, old memory tricks should still be useful. Efficiency is the key driver here.
 
 The path to performance Nirvana is simple:
   - Don't unmarshall **unneeded** data
   - Reuse **low-cardinality** data
 
-The first one is common sense - don't do what you don't need. The second one is a cache — a cache of values. An intern cache of values. Think of it as:
+The first one is common sense - don't do what you don't need. The second one is a cache. An intern cache.
+Interning lowers memory pressure. While string interning still allocates memory, it allows GC to reclaim 
+newly allocated object sooner. And with generational GCs and [TLABs](https://shipilev.net/jvm/anatomy-quarks/5-tlabs-and-heap-parsability/)
+this translates in net performance gains.
+
+Think of it as string-string map:
 
 {% highlight java linenos %}
 final HashMap<String, String> internMap = new HashMap<>();
