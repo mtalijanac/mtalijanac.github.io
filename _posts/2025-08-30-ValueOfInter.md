@@ -92,7 +92,7 @@ But Java being Java, the method remains.
 
 ### Why Bother Then?
 
-In Java, the recommended approach to object reuse is "Don't do it! Allocations are cheap, the GC handles
+In Java, the recommended approach to object reuse is: "Don't do it! Allocations are cheap, the GC handles
 it better than you". Java programmers listen, and often it works. But now and then a Java program eats
 CPU like mad and fix is "increase heap size". And it seems now that every Java program needs
 gigabyte of heap just to start. Ask your non-Java-programmer fellow and he will tell you that Java is a memory hog.
