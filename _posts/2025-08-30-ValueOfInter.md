@@ -53,7 +53,7 @@ a map/cache of strings, and the method name stands for _"add this string to the 
 That's all there is to it.
 
 
-### How to Intern Like It's 1999
+### How to intern like it's 1999
 
 Interning has a CPU and memory overhead. It ain't free and interned strings stay in pool
 forever. But used wisely, intern lowers memory usage as copies of the equal strings can be 
@@ -95,7 +95,7 @@ knew about it. Back then, memory was a scarce resource. Time flies, and in the 2
 But Java being Java, the method remains.
 
 
-### Why Bother Then?
+### Why bother then?
 
 In Java, the recommended approach to object reuse is: "Don't do it! Allocations are cheap, the GC handles
 it better than you". Java programmers listen, and often it works. But now and then a Java program eats
@@ -160,7 +160,7 @@ doesn't matter to which "female" instance your gender reference points. And give
 might as much point to the same. 
 
 
-### A Better Way to Intern
+### A path to Nirvana begins with small step
 
 This approach to intern has a performance flaw: we need an instance of a object to invoke intern, and thus 
 we need to unmarshal objects *before* hitting the cache. We pay allocations and unmarshaling cost
@@ -200,7 +200,7 @@ from Eclipse Collections. It is a Map that allows custom `hashCode`/`equals` log
 You create a map, provide a `HashingStrategy` instance and everything works.
 
 
-### An Even Better Way
+### The final goal
 
 But why stop here? I enjoy performance quests, and this looks like one. Can this code be done better? Faster? Stronger?
 
