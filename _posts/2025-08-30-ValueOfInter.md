@@ -9,7 +9,6 @@ thumbnail-img: /assets/img/ValueOfIntern/path_narrow.jpg
 share-img: /assets/img/ValueOfIntern/path_narrow.jpg
 gh-repo: mtalijanac/associations
 tags: [java, jvm]
-og_type: "article"
 ---
 
 It's not an unreasonable assumption that for a class as central as `String`,every Java developer 
