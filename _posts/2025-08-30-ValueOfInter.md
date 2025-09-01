@@ -82,8 +82,8 @@ values across all users. Because of this, it can be interned to reduce memory us
 another low-cardinality field. In principal it would be great to intern age, but it can't be 
 done, as Java's `Integer` lacks this functionality[^1]. There is no intern method on Integer 
 to invoke. The final field, *name*, is obviously the opposite of low-cardinality. Names are 
-unique or at least unique enough, that interning names would waste memory or even cause leaks.
-Remember - intern pool is forever!
+unique or at least unique enough, that interning names would waste memory.
+
 
 Imagine processing millions of rows in a loop like that. It is common for a night batch job, for example. 
 In order to save memory, a reasonable change would be to intern the gender of user:
