@@ -9,6 +9,7 @@ thumbnail-img: /assets/img/ValueOfIntern/path_narrow.jpg
 share-img: /assets/img/ValueOfIntern/path_narrow.jpg
 gh-repo: mtalijanac/associations
 tags: [java, jvm]
+og_description: "A 1990s memory trick can solve modern performance problems. Stop creating garbage and start interning."
 ---
 
 It's not an unreasonable assumption that for a class as central as `String`,every Java developer 
