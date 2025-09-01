@@ -1,23 +1,26 @@
 ---
+author: Marko Talijanac
 layout: post
 title: The Value of Intern
 subtitle: String walks into a jvm...
+description: A 1990s memory trick can solve modern performance problems. Stop creating garbage and start interning.
 cover-img: /assets/img/ValueOfIntern/path_wide.jpg
 thumbnail-img: /assets/img/ValueOfIntern/path_narrow.jpg
 share-img: /assets/img/ValueOfIntern/path_narrow.jpg
 gh-repo: mtalijanac/associations
 tags: [java, jvm]
-author: Marko Talijanac
+og_type: "article"
 ---
 
-It's not an unreasonable assumption that for a class as central as `String`, 
-every Java developer should be familiar with its inner workings.
-And yet, string interning is — at least from my experience — 
+It's not an unreasonable assumption that for a class as central as `String`,every Java developer 
+should be familiar with its inner workings. And yet, string interning is — at least from my experience — 
 an unknown mechanism to the majority of developers.
 
 So what is `intern()`? And why should you use it?
 
-To start, `intern` is a [method](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/String.html#intern()) of the `String` class. When used properly, `intern` lowers memory usage by ensuring only one instance of a given string value exists in memory. It is a memory optimization utility.
+To start, *intern* is a [method](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/String.html#intern()) 
+of the String class. When used properly, *intern* lowers memory usage by ensuring only 
+one instance of a given string value exists in memory. It is a memory optimization utility.
 
 Demonstration:
 
@@ -194,10 +197,10 @@ a byte array that would fix these identity issues — a wrapper with a proper im
 However, the goal here isn't just avoiding _new String_ but avoiding **new anything**. Any wrapper around 
 byte array key would require an allocation of wrapper itself, so this approach is a no-go.
 
-To solve this issue we need a different implementation of `Map` — one that does not rely on naive `hashCode`/`equals`. A great 
-one is [UnifiedMapWithHashingStrategy](https://www.javaadvent.com/2023/12/hidden-treasures-of-eclipse-collections-2023-edition.html) 
+To solve this issue we need a different implementation of `Map` — one that does not rely on naive `hashCode`/`equals`.
+A great one is [UnifiedMapWithHashingStrategy](https://www.javaadvent.com/2023/12/hidden-treasures-of-eclipse-collections-2023-edition.html) 
 from Eclipse Collections. It is a Map that allows custom `hashCode`/`equals` logic for its keys. 
-You create a map, provide a `HashingStrategy` instance and everything works.
+You create a map, provide a `HashingStrategy` instance and from there everything works.
 
 
 ### The final destination
@@ -209,22 +212,25 @@ Let's outline the limitations:
   - A Map lookup requires a value type with proper `hashCode` and `equals`
   - Testing the *value* of a byte array means constantly calculating `hashCode` and `equals`
 
-That is to say — byte arrays are mutable and in order to enforce identity we must always recalculate
-hash and equals. Thus we have a nontrivial compute operation right at the heart of the map lookup. 
-Thus `Map<byte[],String>` solution will work, but it won't scale well. The way maps work, 
-hashCode/equlas would be performance bottleneck.
+That is to say — byte arrays are mutable and in order to enforce identity maps recalculate hash and equals 
+on each operation. Thus we have a nontrivial compute operation right at the heart of the map lookup. 
+Thus `Map<byte[],String>` solution will work, but it won't scale well. The way maps and arrays work
+in Java, hashCode/equlas would be performance bottleneck.
 
-So why not avoid all those issues and use a structure suited for this task — a [Trie](https://en.wikipedia.org/wiki/Trie)?
-If we need to cache a String, why not walk a trie instead? It is a natural fit.
+So why not avoid all those issues in one swoop? If Java maps are a problem we should try using something
+which has better semantics for our goal. And a natural structure suited for this task is a 
+[Trie](https://en.wikipedia.org/wiki/Trie). If we need to cache a String with itself as a key, 
+we should walk a trie instead. It is a natural fit.
 
-And when we are at it - why do we have to walk string characters at all? Why wouldn't we walk bytes 
-of marshaled value? By using `Trie<Byte>` we do not need to unmarshal data into String at all!!!
-We just use byte array as value to walk the trie. And even then we can further optimise by switching
-byte arrays into long arrays. Because `long` can encode eight bytes in one fetch.
+And when we are at it - why do we have to walk string characters at all? Why wouldn't we walk bytes of marshaled value? 
+Why not build a trie which stores marshaled version of tree but caches unmarshaled object? Thus by using 
+`Trie<Byte>` we do not need to unmarshal data into String at all!!
 
-Given that the majority of data arrays will be only be few bytes long (common consequence of low cardinality) 
-using long will reduce trie depth. 30 bytes can fit into four longs with a few bytes to spare. Thus, 
-matching a `Trie<Long>` for a 30 byte object would only need to be four nodes deep.
+And even that we can further optimise. By switching byte arrays into a long arrays. Long can encode
+eight bytes in one fetch. Given that the majority of data arrays will be only be few bytes long 
+(common consequence of low cardinality) using long will reduce trie depth, number of nodes and comparisons.
+30 bytes can fit into four longs with a few bytes to spare. Thus, matching a `Trie<Long>` for a 30 byte 
+object would only need to be four nodes deep.
 
 ![Variations of Trie types]({{ '/assets/img/ValueOfIntern/DogDot.svg' | relative_url }}){: .mx-auto.d-block :}
 
