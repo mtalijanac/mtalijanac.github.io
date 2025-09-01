@@ -200,7 +200,7 @@ from Eclipse Collections. It is a Map that allows custom `hashCode`/`equals` log
 You create a map, provide a `HashingStrategy` instance and everything works.
 
 
-### The final goal
+### The final destination
 
 But why stop here? I enjoy performance quests, and this looks like one. Can this code be done better? Faster? Stronger?
 
