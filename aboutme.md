@@ -15,6 +15,5 @@ I hope you'll like it.
 To be honest, it isn't story of conquest and deception.
 I went into school. I went into a college. 
 Got a great job. Still there.
-Found a love. Became a father..
+Found a love. Became a father.
 Do enjoy summer barbecues...
-

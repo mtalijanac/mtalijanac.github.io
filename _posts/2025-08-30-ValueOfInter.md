@@ -58,10 +58,9 @@ That's all there is to it.
 
 ### How to intern like it's 1999
 
-Interning has a CPU and memory overhead. It ain't free and interned strings stay in pool
-forever. But used wisely, intern lowers memory usage as copies of the equal strings can be 
-garbage collected. If a program deals with lots of low-cardinality data — a fancy term for 
-_"repeating values"_ — string interning is a useful technique. This scenario is especially 
+Interning has a CPU and memory overhead. But used wisely, intern lowers memory usage as copies of the 
+equal strings can be garbage collected. If a program deals with lots of low-cardinality data — a fancy 
+term for _"repeating values"_ — string interning is a useful technique. This scenario is especially 
 common when unmarshaling data.
 
 Imagine loading users using JDBC:
@@ -158,7 +157,7 @@ gender = intern( gender );              // replace new object with cached one
 {% endhighlight %}
 
 To reuse data, all it takes is a map lookup for a value that is equal to its key. This trick works because
-Java's Strings are essentially **value types** - they are unmutable and differ only by state. So it
+Java's Strings are essentially **value types** - they are immutable and differ only by state. So it
 doesn't matter to which "female" instance your gender reference points. And given this fact, all of them 
 might as much point to the same. 
 
@@ -200,7 +199,7 @@ byte array key would require an allocation of wrapper itself, so this approach i
 To solve this issue we need a different implementation of `Map` — one that does not rely on naive `hashCode`/`equals`.
 A great one is [UnifiedMapWithHashingStrategy](https://www.javaadvent.com/2023/12/hidden-treasures-of-eclipse-collections-2023-edition.html) 
 from Eclipse Collections. It is a Map that allows custom `hashCode`/`equals` logic for its keys. 
-You create a map, provide a `HashingStrategy` instance and from there everything works.
+You create a map, provide a `HashingStrategy` instance and from there everything works[^4].
 
 
 ### The final destination
@@ -244,7 +243,7 @@ reach instance of "DOG" by walking structure using the byte representation of th
 translates to what unmarshaler does. Put in byte array, fetch a String value. 
 Overhead of converting bytes to object is transfered into walking trie.
 
-The final strucuture is `Trie<Long>` which merges multiple bytes into long. Thus greatly reducing 
+The final structure is `Trie<Long>` which merges multiple bytes into long. Thus greatly reducing 
 length of walk, and improving efficiency compared to bytes version of trie. Besides switching bytes 
 for longs it is the same concept as byte version.
 
@@ -261,7 +260,7 @@ Following these ideas, I ended up writing such structure:
 A trie-like structure for interning any **value class**.
 
 And the results? For a small class written in an afternoon, it is undeservedly good. It is much faster 
-than `intern()` itself and often comparable to the speed of allocation.[^4] It is more flexible in 
+than `intern()` itself and often comparable to the speed of allocation.[^5] It is more flexible in 
 usage, as you can have as many different intern pools as you like, and you can intern any object type. 
 You can even drop a pool when you are done with it. And all of that is just a bonus on top of its 
 primary benefit - in my most impacted application it lowered daily count of full GC cycles by about 15%.
@@ -276,4 +275,5 @@ to a C64 and a need." [Good ideas](https://en.wikipedia.org/wiki/Flyweight_patte
 [^1]: In Java, `Integer` values in the range -128 to 127 are cached, but not using an interning mechanism.
 [^2]: ZGC is a state-of-the-art GC, and its expected behavior is sub-millisecond pauses. However, it is possible to break that by running a heavy allocation load combined with constrained resources. It is also CPU heavy.
 [^3]: Arrays in Java have `hashCode` and `equals` implementations based on the memory address of the array, not its content. Thus, two arrays with identical content are never considered equal. Each one is unique. This 'property' makes them unusable as Map keys or for any other operation based on data equality.
-[^4]: It depends on the JDK version and time of day, but on my laptop, it ranges from twice as slow (OpenJDK 8) to twice as fast (OpenJDK 21) for short byte arrays (length <= 7 bytes).
+[^4]: Fundamental problem with `Map<byte[],..>` is that byte arrays can be mutated after being used as keys. So defensive copy is a must.
+[^5]: It depends on the JDK version and time of day, but on my laptop, it ranges from twice as slow (OpenJDK 8) to twice as fast (OpenJDK 21) for short byte arrays (length <= 7 bytes).
