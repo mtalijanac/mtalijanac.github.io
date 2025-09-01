@@ -33,7 +33,7 @@ System.out.println(s3 == s4);    // true, after interning all references point t
 
 
 Two equal strings are instantiated, but after interning, they reference the same instance. 
-It works on string literals too as they are interned by default
+It works on string literals too as they are interned by default:
 
 {% highlight java linenos %}
 String s1 = "world";             // an example literal
