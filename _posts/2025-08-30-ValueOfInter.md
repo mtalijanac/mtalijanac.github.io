@@ -12,7 +12,7 @@ tags: [java, jvm]
 og_description: "A 1990s memory trick can solve modern performance problems. Stop creating garbage and start interning."
 ---
 
-It's not an unreasonable assumption that for a class as central as `String`,every Java developer 
+It's not an unreasonable assumption that for a class as central as `String`, every Java developer 
 should be familiar with its inner workings. And yet, string interning is — at least from my experience — 
 an unknown mechanism to the majority of developers.
 
@@ -214,12 +214,12 @@ Let's outline the limitations:
 That is to say — byte arrays are mutable and in order to enforce identity maps recalculate hash and equals 
 on each operation. Thus we have a nontrivial compute operation right at the heart of the map lookup. 
 Thus `Map<byte[],String>` solution will work, but it won't scale well. The way maps and arrays work
-in Java, hashCode/equlas would be performance bottleneck.
+in Java, hashCode/equlas would be a performance bottleneck.
 
 So why not avoid all those issues in one swoop? If Java maps are a problem we should try using something
 which has better semantics for our goal. And a natural structure suited for this task is a 
 [Trie](https://en.wikipedia.org/wiki/Trie). If we need to cache a String with itself as a key, 
-we should walk a trie instead. It is a natural fit.
+we should walk a trie instead fetching from a map. It is a natural fit.
 
 And when we are at it - why do we have to walk string characters at all? Why wouldn't we walk bytes of marshaled value? 
 Why not build a trie which stores marshaled version of tree but caches unmarshaled object? Thus by using 
@@ -233,19 +233,19 @@ object would only need to be four nodes deep.
 
 ![Variations of Trie types]({{ '/assets/img/ValueOfIntern/DogDot.svg' | relative_url }}){: .mx-auto.d-block :}
 
-The image illustrates these ideas with tries holding words "DOG" and "DOT". The first trie encodes 
+This image illustrates these ideas. All tries are holding words "DOG" and "DOT". The first trie in image encodes 
 words using Strings. To walk that `Trie<String>`, we need an instance of String and we will walk 
 that trie by comparing string characters to nodes of trie. This is classic representation of trie.
 It is something what you would see on [Wikipedia article](https://en.wikipedia.org/wiki/Trie) as example.
 
-The second trie, `Trie<Byte>` implementation, replaces characters for byte values, allowing us to 
+The second trie, `Trie<Byte>` implementation, replaces characters for a byte values, allowing us to 
 reach instance of "DOG" by walking structure using the byte representation of the word. This directly 
-translates to what unmarshaler does. Put in byte array, fetch a String value. 
-Overhead of converting bytes to object is transfered into walking trie.
+translates to what unmarshaler does. Put in byte array, fetch a string. Overhead of converting bytes 
+to object is transfered into walking a trie. No allocations, no hash.
 
 The final structure is `Trie<Long>` which merges multiple bytes into long. Thus greatly reducing 
-length of walk, and improving efficiency compared to bytes version of trie. Besides switching bytes 
-for longs it is the same concept as byte version.
+length of walk, and improving efficiency compared to byte version of a trie. Besides switching bytes 
+for longs it is the same concept and a similar implementation.
 
 And finally this is not a String-only trick — **it works for all value types.** We could intern Longs, 
 Integers, or any other type. Any object, as long as it does not have identity, can be interned using 
