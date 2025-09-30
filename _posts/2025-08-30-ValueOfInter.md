@@ -241,7 +241,7 @@ It is something what you would see on [Wikipedia article](https://en.wikipedia.o
 The second trie, `Trie<Byte>` implementation, replaces characters for a byte values, allowing us to 
 reach instance of "DOG" by walking structure using the byte representation of the word. This directly 
 translates to what unmarshaler does. Put in byte array, fetch a string. Overhead of converting bytes 
-to object is transfered into walking a trie. No allocations, no hash.
+to object is transfered into walking a trie. No allocations, no hashing cost.
 
 The final structure is `Trie<Long>` which merges multiple bytes into long. Thus greatly reducing 
 length of walk, and improving efficiency compared to byte version of a trie. Besides switching bytes 
