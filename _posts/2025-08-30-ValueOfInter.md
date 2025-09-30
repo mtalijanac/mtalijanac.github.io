@@ -266,7 +266,7 @@ You can even drop a pool when you are done with it. And all of that is just a bo
 primary benefit - in my most impacted application it lowered daily count of full GC cycles by about 15%.
 
 So back to title - What is the value of `Intern` then? As a friend of mine said: "It all goes back 
-to a C64 and a need." [Good ideas](https://en.wikipedia.org/wiki/Flyweight_pattern) don't age...
+to a C64 and a need." [Good ideas](https://en.wikipedia.org/wiki/Flyweight_pattern)[^6] don't age...
 
 — Marko Talijanac, April 2025
 
@@ -277,3 +277,4 @@ to a C64 and a need." [Good ideas](https://en.wikipedia.org/wiki/Flyweight_patte
 [^3]: Arrays in Java have `hashCode` and `equals` implementations based on the memory address of the array, not its content. Thus, two arrays with identical content are never considered equal. Each one is unique. This 'property' makes them unusable as Map keys or for any other operation based on data equality.
 [^4]: Fundamental problem with `Map<byte[],..>` is that byte arrays can be mutated after being used as keys. So defensive copy is a must.
 [^5]: It depends on the JDK version and time of day, but on my laptop, it ranges from twice as slow (OpenJDK 8) to twice as fast (OpenJDK 21) for short byte arrays (length <= 7 bytes).
+[^6]: Java 8u20+ introduced flag -XX:+UseStringDeduplication, which applies Flyweight pattern on String instances..
